@@ -2,21 +2,11 @@
 
 An AI-native personal operating system built on Obsidian + Claude Code.
 
-Operator is an opinionated system of 18 Claude Code skills that turn an Obsidian vault into a structured execution engine — daily briefings, arXiv paper scanning, weekly reviews, strategic planning, meeting processing, deadline tracking, deep research, and a content engine for publishing, all orchestrated by AI agents.
+Operator is an opinionated system of 19 Claude Code skills that turn an Obsidian vault into a structured execution engine — daily briefings, arXiv paper scanning, weekly reviews, strategic planning, meeting processing, deadline tracking, deep research, and a content engine for publishing, all orchestrated by AI agents.
 
 ## Quick Start
 
-### 1. Set up the vault
-
-Copy the folder structure into a new Obsidian vault (or adopt it in an existing one):
-
-```bash
-git clone https://github.com/yuhanwang14/obsidian-operator.git
-cp -r obsidian-operator/vault-template/* /path/to/your/vault/
-cp obsidian-operator/CLAUDE.md /path/to/your/vault/
-```
-
-### 2. Install the plugin
+### 1. Install the plugin
 
 Install as a Claude Code plugin (recommended — includes auto-updates):
 
@@ -26,19 +16,33 @@ Install as a Claude Code plugin (recommended — includes auto-updates):
 /plugin install obsidian-operator
 ```
 
+### 2. Initialize the vault
+
+Open your (empty or existing) Obsidian vault directory and run:
+
+```bash
+cd /path/to/your/vault
+claude
+
+/vault-init
+```
+
+`/vault-init` creates the folder structure, copies `CLAUDE.md`, walks you through the Customization table (vault owner, calendar names, meeting paths), and optionally sets up `~/.secrets` + the transcription script for `/meeting`. It's idempotent — safe to rerun.
+
+If you'd rather set things up by hand:
+
+```bash
+git clone https://github.com/yuhanwang14/obsidian-operator.git
+cp -r obsidian-operator/vault-template/* /path/to/your/vault/
+cp obsidian-operator/CLAUDE.md /path/to/your/vault/
+# then edit the Customization table in CLAUDE.md
+```
+
 Or install individual skills manually:
 
 ```bash
-# Install individual skills
-npx skills add yuhanwang14/obsidian-operator@daily-init
-npx skills add yuhanwang14/obsidian-operator@weekly-init
-npx skills add yuhanwang14/obsidian-operator@weekly-review
-npx skills add yuhanwang14/obsidian-operator@meeting
-npx skills add yuhanwang14/obsidian-operator@project-init
-# ... etc
-
-# Or install all 18
-for skill in daily-init weekly-init weekly-review daily-github daily-academic \
+# Install all 19
+for skill in vault-init daily-init weekly-init weekly-review daily-github daily-academic \
   ai-weekly-digest meeting meeting-prep project-init project-sync \
   quarterly-plan annual-vision deadline-plan add-events link-enrich \
   content-extract content-draft deep-research; do
@@ -49,9 +53,6 @@ done
 ### 3. Start using
 
 ```bash
-cd /path/to/your/vault
-claude
-
 # Your first day:
 /project-init MyProject
 /daily-init 6
@@ -118,6 +119,12 @@ If not configured, `/daily-init` skips the email section silently.
 See [CLAUDE.md](CLAUDE.md) for full conventions, frontmatter spec, checkbox states, and AI agent instructions.
 
 ## Skills Reference
+
+### Setup
+
+| Skill | Description |
+|-------|-------------|
+| `vault-init` | One-shot vault bootstrap — creates the 6-folder structure, copies `CLAUDE.md`, walks through the Customization table, optionally installs `~/.secrets` + the `/meeting` transcription script. Idempotent. Run this first. |
 
 ### Daily Operations
 
