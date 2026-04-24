@@ -1,6 +1,6 @@
 ---
 name: vault-init
-description: "One-shot setup of an Obsidian vault for the Operator system. TRIGGER when the user has just installed the obsidian-operator plugin and needs to initialize a fresh vault, is asking how to 'set up my vault', 'initialize the vault', 'get started with Operator', 'bootstrap the folder structure', wants to copy the template folders, or asks what to do after installing the plugin. Also triggers on /vault-init, /setup, /init-vault, 'onboard me', 'first-time setup', or any message where the user is staring at an empty vault and doesn't know where to start. Creates the 00_Strategy/01_Execution/02_Projects/03_Thinking/04_Knowledge/05_Content folder structure, copies CLAUDE.md into the vault root, walks the user through the CLAUDE.md Customization table (vault owner name, Apple Calendar name, Reminders list, meeting paths), and optionally sets up ~/.secrets + the transcription script. NOT for creating a single project (use /project-init), initializing a day (/daily-init), or initializing a week (/weekly-init). This is the very first thing a new user runs."
+description: "One-shot setup of an Obsidian vault for the Operator system. TRIGGER when the user has just installed the obsidian-operator plugin and needs to initialize a fresh vault, is asking how to 'set up my vault', 'initialize the vault', 'get started with Operator', 'bootstrap the folder structure', wants to copy the template folders, or asks what to do after installing the plugin. Also triggers on /vault-init, /onboard, /setup, /init-vault, 'onboard me', 'first-time setup', or any message where the user is staring at an empty vault and doesn't know where to start. Creates the 00_Strategy/01_Execution/02_Projects/03_Thinking/04_Knowledge/05_Content folder structure, copies CLAUDE.md into the vault root, walks the user through the CLAUDE.md Customization table (vault owner name, Apple Calendar name, Reminders list, meeting paths), and optionally sets up ~/.secrets + the transcription script. NOT for creating a single project (use /project-init), initializing a day (/daily-init), or initializing a week (/weekly-init). This is the very first thing a new user runs."
 version: 1.0.0
 author: Yuhan Wang
 license: MIT
@@ -141,9 +141,54 @@ Don't configure these — they're handled outside Claude Code. Just surface them
 - **Gmail MCP** (for `/daily-init` email section): "Connect Google in Claude Code settings → MCP integrations if you want email in your daily briefing."
 - **Apple Calendar / Reminders** (macOS only): "`/deadline-plan` and `/add-events` will use the calendar/list names you just set. No OS setup needed."
 
-## Step 8 — Final summary
+## Step 8 — Day-1 onboarding chain
 
-Print one compact block the user can screenshot or pin:
+The vault is scaffolded but empty, and today is the user's day 1. `/daily-init`'s boundary cascade was designed for transitions between existing states (new week, new month, new quarter), not a cold start — so we run the setup layers explicitly instead of hoping downstream boundary logic catches everything.
+
+Present four items in a single prompt:
+
+```
+Your vault is ready but empty. Want me to run any of these now? Reply with numbers, 'all', or 'skip':
+
+  1. Projects         (/project-init, loops)    — scaffold one or more projects
+  2. Annual vision    (/annual-vision)          — this year's north star + goals
+  3. Quarterly plan   (/quarterly-plan init)    — this quarter's execution plan
+  4. Today's briefing (/daily-init, asks for hours) — kick off your first day
+```
+
+**Execution rules:**
+
+- Run selections in order **1 → 2 → 3 → 4** regardless of reply order. Reason: `/quarterly-plan init` reads the annual vision if present; `/daily-init` reads active projects + the quarterly plan.
+
+- **Item 1 loops.** Ask "Project name?", invoke `/project-init <name>`, wait for completion, then ask "Another project? (name / done)". Keep going until the user replies 'done' or blank. First-time users typically have 2–4 trackable things.
+
+- **Items 2, 3, 4 run once each.** Invoke the skill by name, wait for completion, let each drive its own prompts. Don't try to pre-fill args.
+
+- Invocation pattern matches the cross-skill pattern in `skills/daily-init/SKILL.md` Pre-Flight Check (steps 1–1e).
+
+- If an invoked skill fails, log a one-line warning (e.g. "⚠️ /quarterly-plan init failed — run manually") and continue with the next item. Don't abort onboarding.
+
+**Reply parsing:**
+
+- `skip` at the top → jump straight to Step 9 with all four rendered as skipped. Do NOT auto-run `/weekly-init` either — the user said skip.
+- `all` → run 1 (looping) then 2, 3, 4 in order.
+- A list like `1, 3` → run only those, in order 1 → 3.
+
+**Auto-complete this week's scaffold:**
+
+`/weekly-init` is purely mechanical (no user prompts anywhere — just carries items from last week, parses daily notes, injects deadline tasks, populates Blockers from calendar). Putting it in the menu would offer the user a choice where there's nothing to choose. So:
+
+- If item 4 (`/daily-init`) ran → skip this step. `/daily-init`'s Step 2 already runs `/weekly-init`.
+- If item 4 was skipped but anything else ran → silently invoke `/weekly-init` here so this week's execution layer is ready when the user eventually runs `/daily-init`. Record it for Step 9 as "Weekly setup: YYYY-WXX ready (auto)".
+- If the user chose `skip` at the top (nothing ran) → do NOT auto-run `/weekly-init`. Respect the skip.
+
+Track across this step: which items ran, project names created, year/quarter set, whether weekly-init was auto-run. Step 9 reports this.
+
+## Step 9 — Final summary
+
+Print one compact block the user can screenshot or pin. Use `✓` for items that actually ran in Step 8 and `→` followed by the command for items the user skipped — this way the summary doubles as a cheat-sheet for what's still left to do.
+
+Template (fill in based on what Step 8 tracked):
 
 ```
 Vault ready at: <vault_path>
@@ -164,10 +209,23 @@ Optional (status):
   - Gmail MCP: configure in Claude Code settings
   - Apple Calendar: ready (macOS)
 
-Next steps:
-  /project-init <name>   # scaffold your first project
-  /daily-init <hours>    # generate today's briefing
+Day-1 onboarding:
+  <status line 1>   — projects
+  <status line 2>   — annual vision
+  <status line 3>   — quarterly plan
+  <status line 4>   — weekly setup
+  <status line 5>   — today's briefing
 ```
+
+Each status line follows this pattern:
+
+| Item | If it ran | If skipped |
+|------|-----------|------------|
+| Projects | `✓ Projects created: Alpha, Beta` | `→ /project-init <name>` |
+| Annual vision | `✓ Annual vision: 2026 set` | `→ /annual-vision` |
+| Quarterly plan | `✓ Quarterly plan: 2026-Q2 set` | `→ /quarterly-plan init` |
+| Weekly setup | `✓ Weekly setup: 2026-W17 ready` (note `(auto)` if auto-run, nothing if via /daily-init) | `→ /weekly-init` |
+| Today's briefing | `✓ Today's briefing generated` | `→ /daily-init <hours>` |
 
 End there. No celebratory preamble, no recap of what the README already said.
 
