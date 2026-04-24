@@ -59,7 +59,8 @@ cp -rn "<assets>/vault-template/." "<vault_path>/"
 ```
 
 The template provides:
-- Six core folders with `.gitkeep` placeholders
+- Six core folders (`00_Strategy`, `01_Execution`, `02_Projects`, `03_Thinking`, `04_Knowledge`, `05_Content`)
+- `04_Knowledge/GitHub/`, `04_Knowledge/Academic/`, `04_Knowledge/AI-Weekly/` — standing destinations for `/daily-github`, `/daily-academic`, `/ai-weekly-digest`
 - `05_Content/Backlog.md` — empty content queue
 - `05_Content/Voice Guide.md` — voice profile template
 - `05_Content/Drafts/` and `05_Content/Published/` subdirs
