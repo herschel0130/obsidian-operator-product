@@ -77,11 +77,7 @@ Before reading other sources, open yesterday's daily note, the current Weekly To
 - Also check: if yesterday's `[x]` item semantically matches a Blockers.md `## Waiting On` `[ ]` item, mark the blocker `[x]` too (same CLI method, targeting Blockers.md).
 - This keeps the Weekly Todo and Blockers in sync without the user having to update them manually.
 
-**Sync cancelled meetings (`[-]`) from yesterday's daily note:**
-- Scan yesterday's daily note for any `[-]` items (skipped/cancelled checkbox state).
-- For each `[-]` item, check if it semantically matches a `## Meetings` entry in the current Blockers.md (match by meeting name, project keyword, or participant — e.g. "ProjectAlpha Meeting" matches a Blockers entry for "ProjectAlpha weekly").
-- For each match where the Blockers entry is still `[ ]`: mark it `[-]` using Edit tool (replace `- [ ]` with `- [-]` on that line).
-- If the daily note `[-]` item has sub-bullets with a reason (e.g. `今天没开，因为大家都没空`), append the reason as a sub-bullet under the Blockers `## Meetings` entry too.
+**`[-]` items are dropped — do nothing with them.** `[-]` means the user abandoned/cancelled the item. Do not sync to Blockers, Weekly Todo, deadline plans, or anywhere else. Do not carry forward. Do not surface again. Skip them entirely from now on.
 
 ### 0b. Sync Deadline Plans from yesterday
 After syncing the Weekly Todo (Step 0), sync deadline plans. This replaces the old manual `update` mode — all sync is automatic. Skip this step if `/weekly-review` was triggered in step 1.
@@ -115,10 +111,24 @@ Read the most recently modified files in `01_Execution/` and any active projects
 ### 2. This week's daily notes
 Read all daily note files in `01_Execution/YYYY-[W]WW/` (excluding `Weekly Review.md` and `Weekly Todo.md`).
    - From **yesterday's note**: extract:
-     - Any action item marked `[>]` — check for an explicit delay date (text like "→ YYYY-MM-DD", "→ Mon", "delay to Mar 30", etc.):
-       - **Delay date = today** → promote to a normal action item, prefixed "carried:" (the delay has landed)
-       - **Delay date is in the future** → carry forward as `[>]` with the date preserved, prefixed "deferred:" (not yet actionable — passes through today's note visibly but stays `[>]`)
-       - **No delay date** → treat as a regular carry-forward, prefixed "carried:" (same as before)
+     - Any action item marked `[>]` — parse for an explicit delay date. **Recognized formats** (any combination):
+       - ASCII or Unicode arrow: `-> ...`, `→ ...`
+       - ISO date: `2026-04-28`
+       - English day name: `Mon`, `Tue`, ..., `Friday`
+       - Chinese day name: `周一`, `周二`, `周三`, `周四`, `周五`, `周六`, `周日` (also `星期一`–`星期日`, `礼拜一`–`礼拜日`)
+       - Month-day: `Apr 28`, `May 1`, `5/1`
+       - Parenthetical date alongside any of the above: `-> 周五 (May 1)`, `→ Fri (Apr 30)`, `-> 周二 (Apr 28)`
+       - Phrasal: `delay to Mar 30`, `defer to next Wed`, `推到周五`
+     - **Resolution rules:**
+       - If both a day name and a parenthetical date are present, use the parenthetical (it's more specific). They should agree; if they disagree, trust the parenthetical.
+       - Day names → next occurrence of that weekday relative to yesterday's date (so `周五` written on Mon Apr 27 = Fri May 1).
+       - Month-day without year → assume the year that puts the date in the future (current year, or next year if already past).
+       - Always normalize to ISO `YYYY-MM-DD` when writing into today's note.
+     - **Classification:**
+       - **Delay date = today** → promote to a normal action item, prefixed "carried:" (the delay has landed).
+       - **Delay date is in the future** → carry forward as `[>] <task> → YYYY-MM-DD` listed under the `#### Deferred` heading (NOT in the main Action Items list). Stays `[>]` until the date arrives.
+       - **No delay date** → treat as a regular carry-forward, prefixed "carried:" (same as before).
+     - **`[-]` items**: skip entirely (dropped — not deferred, not carried, not synced anywhere).
      - The `## Plan > ### Tomorrow` block — each bullet becomes a planned item
    - From **all this week's notes** (including yesterday): collect all `## Plan > ### This week` items:
      - Items with a (Day) prefix like (Mon), (Tue), etc. → surface only on that designated day
@@ -128,7 +138,7 @@ Read all daily note files in `01_Execution/YYYY-[W]WW/` (excluding `Weekly Revie
 ### 3. Weekly Todo
 Read `01_Execution/YYYY-[W]WW/Weekly Todo.md` (flat list — no day sections).
 - Surface **all** `[ ]` items (skip any `[x]` or `[-]`).
-- `[-]` means **deferred** — the item was consciously moved to the monthly plan or horizon items. Do not surface it in daily briefings. It lives in the Monthly Pulse → Horizon Items table until its target month.
+- `[-]` means **dropped** — the item was abandoned/cancelled. Do not surface, do not sync, do not carry forward. Inert from this point on.
 - These appear in Action Items without a prefix — they are standing weekly commitments visible every day until done.
 
 ### 3b. Blockers
@@ -175,10 +185,11 @@ Glob for all `02_Projects/**/Deadline Plan.md` files (recursive — catches nest
 
 ## Action Item States
 
-Action items use three checkbox states:
-- `[x]` — **Completed today**
-- `[>]` — **Move to tomorrow** (will be auto-carried forward in next day's briefing)
-- `[>]` with a date suffix — **Delayed to a specific date** (e.g. `- [>] Draft proposal → 2026-03-30`). Carried forward daily as `[>]` until that date arrives, then promoted to a regular `[ ]` item.
+Action items use four checkbox states:
+- `[x]` — **Completed today**.
+- `[>]` — **Move to tomorrow** (auto-carried forward in next day's briefing as a normal `[ ]` action item, prefixed "carried:").
+- `[>]` with a date suffix — **Delayed to a specific date**. Examples: `- [>] Draft proposal → 2026-03-30`, `- [>] PS 4 -> 周五 (May 1)`, `- [>] Past paper -> 周六+周日 (May 2-3)`. Recognized formats: ISO `YYYY-MM-DD`, English day names (`Mon`, `Friday`), Chinese day names (`周五`, `星期五`), month-day (`Apr 28`, `May 1`), parenthetical dates `(May 1)`, ASCII `->` or Unicode `→` arrows, phrasal (`delay to Mar 30`). Listed under `#### Deferred` and carried forward as `[>]` until the date arrives, then promoted to a regular `[ ]` item.
+- `[-]` — **Dropped** (abandoned/cancelled). Do not carry forward. Do not sync to Blockers, Weekly Todo, deadline plans, or anywhere. Inert — never considered again.
 
 ## Output Format
 

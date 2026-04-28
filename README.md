@@ -83,7 +83,7 @@ No OS setup needed beyond macOS. Configure the calendar and list names via `/vau
 02_Projects/            — per-project folders with meeting plans, transcripts, deadlines
 03_Thinking/            — reflections, ideas, mental models
 04_Knowledge/           — research, meeting knowledge, deep research, digests
-05_Content/             — content backlog, drafts, voice guide, published archive
+05_Content/             — content backlog, drafts, published, archived, voice guide
 ```
 
 See [CLAUDE.md](skills/vault-init/assets/CLAUDE.md) for full conventions, frontmatter spec, checkbox states, and AI agent instructions.
@@ -170,7 +170,7 @@ See [CLAUDE.md](skills/vault-init/assets/CLAUDE.md) for full conventions, frontm
                         │  (subsequent days within same ISO week)     │
                         │                                             │
                         │  0.  sync yesterday's [x] → Weekly Todo    │
-                        │      sync [-] cancelled → Blockers         │
+                        │      ([-] = dropped, no sync)               │
                         │  0b. sync [x] → Deadline Plans (task queue) │
                         │  1.  (skip weekly transition)               │
                         │  1c. /quarterly-plan pulse (new month)      │
@@ -187,9 +187,10 @@ See [CLAUDE.md](skills/vault-init/assets/CLAUDE.md) for full conventions, frontm
 ```
 Daily notes accumulate in 01_Execution/YYYY-WXX/
     ↓ [x] completions sync back to Weekly Todo + Blockers automatically
-    ↓ [-] cancelled meetings sync back to Blockers ## Meetings
     ↓ [x] deadline tasks sync back to Deadline Plan task queue + hours
     ↓ [>] items carry forward to next day's briefing
+    ↓ [>] with future date (e.g. -> 周五 (May 1), → 2026-05-01) → #### Deferred section
+    ↓ [-] items are DROPPED — no sync, no carry-forward, inert
     ↓
 /meeting routes actions after processing transcripts:
     → Vault owner's independent actions → Weekly Todo
