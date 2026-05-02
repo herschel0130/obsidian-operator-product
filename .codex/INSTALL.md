@@ -25,9 +25,14 @@ ln -s ~/.codex/obsidian-operator/skills ~/.agents/skills/obsidian-operator
 
 Codex scans `~/.agents/skills/` at startup, parses each SKILL.md frontmatter, and routes by `description`.
 
-### 3. Register the pre-flight hook
+### 3. Register the pre-flight hooks
 
-obsidian-operator ships a `UserPromptSubmit` hook that checks for missing weekly review / monthly pulse / quarterly review when `/daily-init` is invoked. Without this hook, those checks fall back to text-level enforcement (weaker; see "Known limitation" below).
+obsidian-operator ships two `UserPromptSubmit` hooks:
+
+- `preflight-enforce.sh` — checks for missing weekly review / monthly pulse / quarterly review when `/daily-init` is invoked.
+- `deep-research-enforce.sh` — enforces parallel agent dispatch (Step 4) when `/deep-research` is invoked, preventing silent main-thread research drift.
+
+Without these hooks, both behaviors fall back to text-level enforcement (weaker; see "Known limitation" below).
 
 Add to your `~/.codex/hooks.json` (create if missing — merge with existing hooks if present):
 
@@ -35,17 +40,24 @@ Add to your `~/.codex/hooks.json` (create if missing — merge with existing hoo
 {
   "hooks": {
     "UserPromptSubmit": [{
-      "hooks": [{
-        "type": "command",
-        "command": "bash $HOME/.codex/obsidian-operator/hooks/preflight-enforce.sh",
-        "timeout": 5000
-      }]
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash $HOME/.codex/obsidian-operator/hooks/preflight-enforce.sh",
+          "timeout": 5000
+        },
+        {
+          "type": "command",
+          "command": "bash $HOME/.codex/obsidian-operator/hooks/deep-research-enforce.sh",
+          "timeout": 3000
+        }
+      ]
     }]
   }
 }
 ```
 
-If `~/.codex/hooks.json` already exists with other hooks, merge by adding the inner `hooks` array entry rather than replacing the file.
+If `~/.codex/hooks.json` already exists with other hooks, merge by adding the inner `hooks` array entries rather than replacing the file.
 
 ### 4. Enable multi-agent feature (for `/deep-research`)
 
@@ -91,7 +103,12 @@ If skills loaded correctly, vault-init activates and walks through vault setup.
 
 ## Known limitation: Pre-flight hook fallback
 
-If you skip step 3 (hook registration), the boundary checks in `/daily-init` (last week's review, last month's pulse, last quarter's review) fall back to in-skill text instructions. The agent may rationalize-skip these on a busy day — empirical regression observed in April 2026 with Claude Code before the hook was introduced (v1.7.9). The hook in step 3 is the harness-level enforcement that prevents this.
+If you skip step 3 (hook registration), two enforcement behaviors fall back to in-skill text instructions:
+
+- `/daily-init` boundary checks (last week's review, last month's pulse, last quarter's review). Empirical regression observed in April 2026 with Claude Code before the hook was introduced (v1.7.9).
+- `/deep-research` Step 4 parallel dispatch. Empirical regression observed 2026-05-02 with Codex CLI — agent ran ~10 main-thread web searches without any `spawn_agent` calls and without the documented sequential-fallback notice. Fixed in v1.9.1.
+
+The hooks in step 3 are the harness-level enforcement that prevent these.
 
 ## Updating
 

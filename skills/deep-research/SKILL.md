@@ -62,12 +62,30 @@ Each thread gets:
 
 ## Step 4 — Execute parallel research
 
-Dispatch one research agent per thread, **all in a single batch** so they run in parallel.
+**STOP — Step 4 is mandatory. You CANNOT proceed to Step 5 without either dispatching parallel agents or emitting the documented sequential-fallback notice. Running `WebSearch` / `WebFetch` yourself on the main thread instead of dispatching agents IS a skip — go back and dispatch.**
 
-**Platform syntax:**
+Decompose the brief into 3-5 threads (Step 3) and dispatch one research agent per thread, **all in a single batch** so they run in parallel.
+
+### Required dispatch
 
 - **Claude Code:** Use the `Agent` tool, multiple calls in one message, `model: "opus"` for each agent.
-- **Codex CLI:** Use `spawn_agent(agent_type="worker", message=...)` for each thread in one message, then `wait` to collect results, then `close_agent` per agent. Requires `[features] multi_agent = true` in `~/.codex/config.toml` — see `using-obsidian-operator/references/codex-tools.md` for full setup and message-framing template. **Fallback:** if `multi_agent` is not enabled (`spawn_agent` errors), execute threads sequentially in the parent agent and emit a one-line note: `"Running threads sequentially — enable [features] multi_agent = true in ~/.codex/config.toml for parallel."`
+- **Codex CLI:** Use `spawn_agent(agent_type="worker", message=...)` for each thread in one message, then `wait` to collect results, then `close_agent` per agent. Requires `[features] multi_agent = true` in `~/.codex/config.toml` — see `using-obsidian-operator/references/codex-tools.md` for full setup and message-framing template.
+
+### Codex CLI fallback (only if `spawn_agent` errors)
+
+If `[features] multi_agent = true` is missing, `spawn_agent` will error. In that case:
+
+1. Emit this **exact** one-line notice before running anything:
+
+   ```
+   Running threads sequentially — enable [features] multi_agent = true in ~/.codex/config.toml for parallel.
+   ```
+
+2. Then execute the threads sequentially in the parent agent.
+
+Silent fallback (sequential research without the notice) is a violation.
+
+### Per-agent prompt contents
 
 Each agent's prompt must include:
 1. The overall research brief (for context)
@@ -82,13 +100,22 @@ Each agent's prompt must include:
 
 If a thread returns thin results (fewer than 3 substantive findings), note it — the synthesis step will flag it as a gap.
 
+### Self-check before Step 5
+
+Do not proceed to synthesis until you can answer "yes" to one of:
+
+- "I dispatched 3-5 agents (`Agent` calls or `spawn_agent` calls) in a single message and have their results."
+- "`spawn_agent` errored, I emitted the exact sequential-fallback notice above, and I ran the threads sequentially myself."
+
+If neither is true, you have skipped Step 4 — go back and dispatch.
+
 ## Step 5 — Synthesize and write the report
 
-After all thread agents return, dispatch **one final synthesis agent**.
+After all thread agents return, dispatch **one final synthesis agent**. Do not write the report on the main thread — synthesis is a separate dispatched agent so the thread results are passed in cleanly without polluting the parent context.
 
 **Platform syntax:**
 - **Claude Code:** `Agent` tool, single call, `model: "opus"`.
-- **Codex CLI:** single `spawn_agent(agent_type="worker", message=...)` + `wait` + `close_agent`. (`multi_agent` feature must be enabled, same as Step 4.)
+- **Codex CLI:** single `spawn_agent(agent_type="worker", message=...)` + `wait` + `close_agent`. (`multi_agent` feature must be enabled, same as Step 4. If it errored in Step 4 and you ran sequentially, write the synthesis on the main thread and note this in the report's frontmatter.)
 
 The synthesis agent's prompt must include:
 1. The research brief

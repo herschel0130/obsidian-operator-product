@@ -1,5 +1,5 @@
 {
-  "description": "obsidian-operator pre-flight enforcement: when /daily-init is invoked, check the vault for any missing weekly review / AI weekly digest / monthly pulse / quarterly review / quarterly plan that should already exist (per daily-init Pre-Flight Steps 1, 1b, 1c, 1d, 1e), and inject a <system-reminder> additionalContext forcing the missing skill(s) to run first. Harness-level enforcement so the auto-trigger cannot be silently rationalize-skipped (regression observed 2026-05-01 + 2026-05-02 — April Monthly Pulse missed for 2 consecutive days because Claude flagged-and-skipped the auto-trigger inside daily-init).",
+  "description": "obsidian-operator harness-level enforcement hooks. (1) preflight-enforce.sh: when /daily-init is invoked, checks the vault for missing weekly review / AI weekly digest / monthly pulse / quarterly review / quarterly plan and injects <system-reminder> additionalContext forcing the missing skill(s) to run first (regression observed 2026-05-01 + 2026-05-02 — April Monthly Pulse missed for 2 consecutive days). (2) deep-research-enforce.sh: when /deep-research is invoked, injects <system-reminder> additionalContext forcing Step 4 parallel agent dispatch instead of silent main-thread research (regression observed 2026-05-02 — Codex CLI ran ~10 main-thread web searches without spawn_agent calls and without the documented sequential-fallback notice).",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -9,6 +9,12 @@
             "command": "_R=\"${CLAUDE_PLUGIN_ROOT}\"; [ -z \"$_R\" ] && _R=\"$HOME/.claude/plugins/marketplaces/yuhanwang14/obsidian-operator\"; bash \"$_R/hooks/preflight-enforce.sh\"",
             "timeout": 5000,
             "statusMessage": "Checking daily-init pre-flight..."
+          },
+          {
+            "type": "command",
+            "command": "_R=\"${CLAUDE_PLUGIN_ROOT}\"; [ -z \"$_R\" ] && _R=\"$HOME/.claude/plugins/marketplaces/yuhanwang14/obsidian-operator\"; bash \"$_R/hooks/deep-research-enforce.sh\"",
+            "timeout": 3000,
+            "statusMessage": "Checking deep-research dispatch policy..."
           }
         ]
       }
