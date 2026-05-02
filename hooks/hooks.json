@@ -1,0 +1,17 @@
+{
+  "description": "obsidian-operator pre-flight enforcement: when /daily-init is invoked, check the vault for any missing weekly review / AI weekly digest / monthly pulse / quarterly review / quarterly plan that should already exist (per daily-init Pre-Flight Steps 1, 1b, 1c, 1d, 1e), and inject a <system-reminder> additionalContext forcing the missing skill(s) to run first. Harness-level enforcement so the auto-trigger cannot be silently rationalize-skipped (regression observed 2026-05-01 + 2026-05-02 — April Monthly Pulse missed for 2 consecutive days because Claude flagged-and-skipped the auto-trigger inside daily-init).",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "_R=\"${CLAUDE_PLUGIN_ROOT}\"; [ -z \"$_R\" ] && _R=\"$HOME/.claude/plugins/marketplaces/yuhanwang14/obsidian-operator\"; bash \"$_R/hooks/preflight-enforce.sh\"",
+            "timeout": 5000,
+            "statusMessage": "Checking daily-init pre-flight..."
+          }
+        ]
+      }
+    ]
+  }
+}

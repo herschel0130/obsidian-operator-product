@@ -43,7 +43,10 @@ When assessing each goal, incorporate signals from project-level research (knowl
 Aggregate all `### Horizon Items` from weekly reviews in the target month. Deduplicate by semantic meaning.
 
 ### Step 5: Identify maturing deadlines
-From collected horizon items and project notes, identify items that now have concrete dates. Classify each:
+
+**Auto-mode skip (CRITICAL):** When this skill is auto-triggered by `/daily-init` (Pre-Flight Step 1c), **skip this entire step** and proceed directly to Step 6. The Monthly Pulse file is the primary deliverable; calendar/reminder creation is opt-in interactive work that requires the user explicitly running `/quarterly-plan pulse` themselves. Surfacing interactive confirmations during auto-trigger causes the parent `/daily-init` to flag-and-skip the trigger entirely (observed regression 2026-05-01 + 2026-05-02 — April pulse missed for 2 consecutive days).
+
+**Manual-mode only:** From collected horizon items and project notes, identify items that now have concrete dates. Classify each:
 - **Has exact date + time** → offer to create Apple Reminder (via osascript, using the reminders list name from CLAUDE.md)
 - **Has exact date only** → offer to create Apple Calendar all-day event (via osascript, using the calendar name from CLAUDE.md)
 - **Still soft** → keep in vault planning layer
@@ -68,8 +71,56 @@ end tell
 ### Step 6: Write Monthly Pulse
 Write `00_Strategy/YYYY-QX/Monthly Pulse - MM.md` using the template structure. Populate all sections from the analysis above.
 
-### Step 7: Open the file
-Run `obsidian open path="00_Strategy/YYYY-QX/Monthly Pulse - MM.md"` to open the file in Obsidian.
+### Step 7: Update the Quarterly Plan with revisions detected this pulse (CRITICAL — living-doc fix introduced 2026-05-02 / v1.7.9)
+
+The Quarterly Plan is a **living document**, not a frozen snapshot. After writing the Monthly Pulse, fold any divergence between plan-as-written and reality-as-observed back into the plan's `## Current State` section. Original intent stays preserved in `## Locked Original`.
+
+**When to update:** if Steps 3–4 surfaced ANY of:
+- A new objective / workstream that wasn't in the plan (additive)
+- A KR rendered moot by reality (cancelled, dropped, reassigned)
+- A KR target that was never achievable as written (downward-revised)
+- A `[?]` KR that now has concrete shape (promote to `[ ]`)
+- A milestone that's slipped or cancelled
+
+**How to update:**
+1. Read `00_Strategy/YYYY-QX/Quarterly Plan.md`.
+2. Append a new dated entry to the `## Plan Revisions Log` section (most recent first), with this structure:
+   ```markdown
+   ### Rev N — YYYY-MM-DD (brief context, triggered by `/quarterly-plan pulse YYYY-MM`)
+
+   **Added:**
+   - [new objective or KR with one-line reason]
+
+   **Dropped (with reason):**
+   - [item → CANCELLED/DROPPED — reason]
+
+   **Modified:**
+   - [original → new — reason]
+
+   **Deferred:**
+   - [item → new target date — reason]
+
+   **`[?]` → `[ ]` promotions** (if any):
+   - [previously `[?]`] → [now `[ ]` with concrete shape — what info landed]
+
+   **Calibration note** (optional): one-sentence learning for next quarter's planning.
+
+   **Linked pulse:** [[Monthly Pulse - MM]]
+   ```
+3. Apply the same changes to the `## Current State` section in-place — update objectives, KRs, milestones to match reality.
+4. **Never edit `## Locked Original`** — that section is frozen at quarter start for honesty + post-quarter calibration.
+5. Bump the `last-revised` field in frontmatter to today's date.
+
+**Auto-mode behavior (when triggered by /daily-init):** Write revisions directly without asking. The pulse itself documents what changed; user can git-revert if they disagree. Don't surface confirmation prompts (would cause the parent /daily-init to rationalize-skip the entire trigger).
+
+**Manual-mode behavior:** Same — write directly. The non-destructive append + Current State edit is safe; user reviews after.
+
+**No-revisions case:** If the pulse assessment found nothing to revise, skip Step 7 entirely. Add a one-line note to the Pulse: "Plan unchanged — no revisions this month."
+
+**Editing convention:** Use the Edit tool (Read-then-Edit), not Write — preserves the Locked Original section and any manual user edits to Current State that weren't captured in this pulse.
+
+### Step 8: Open the pulse + the revised plan
+Run `obsidian open path="00_Strategy/YYYY-QX/Monthly Pulse - MM.md"` to open the pulse. If Step 7 wrote revisions, ALSO `obsidian open path="00_Strategy/YYYY-QX/Quarterly Plan.md"` so the user sees what changed.
 
 ## Init Mode (Start of Quarter)
 
@@ -86,14 +137,84 @@ If `00_Strategy/YYYY-QX/Quarterly Plan.md` already exists, switch to **update mo
 - Active project notes in `02_Projects/`
 
 ### Step 4: Guide goal-setting
-Present to user:
+
+**Auto-mode skip (CRITICAL):** When this skill is auto-triggered by `/daily-init` (Pre-Flight Step 1e), **skip the interactive presentation** and proceed directly to Step 5. Write the Quarterly Plan with **draft objectives sourced from**:
+1. Carried horizon items from last quarter's monthly pulses
+2. Last quarter's review's "Suggested next quarter focus" (if exists)
+3. Annual Vision goals mapped to this quarter (read `00_Strategy/YYYY Vision.md` if exists)
+4. Active project notes' `## Now` sections
+
+The auto-generated plan must include a `## ⚠️ TODO: User Review` block at the top: "Objectives drafted in auto-mode by the new-quarter trigger. Review and adjust manually — re-run `/quarterly-plan init` interactively to lock final objectives." This makes the draft visible + invites the user to override. Surfacing interactive confirmations during auto-trigger causes the parent `/daily-init` to flag-and-skip the trigger entirely (regression analog to the April 2026 pulse miss).
+
+**Manual-mode (interactive — when user invokes `/quarterly-plan init` directly):** Present to user:
 - Annual goals relevant to this quarter (from Vision)
 - Suggested focus from last quarter's review
 - Carried horizon items that weren't resolved
 - Ask user to confirm/adjust objectives before writing
 
 ### Step 5: Write Quarterly Plan
-Write `00_Strategy/YYYY-QX/Quarterly Plan.md` using the template. Populate objectives, milestones, key results, monthly focus, and risks from the discussion.
+
+Write `00_Strategy/YYYY-QX/Quarterly Plan.md` using the new **living-document structure** (introduced 2026-05-02 / v1.7.9):
+
+```markdown
+# Quarterly Plan · YYYY-QX
+
+## Vision Alignment
+[from annual vision]
+
+## Q(X-1) Inheritance — What Carries Forward
+[from last quarter review]
+
+---
+
+## Locked Original (frozen at quarter start, never edited after init)
+
+### Initial Objectives (set YYYY-MM-DD)
+[the original objectives]
+
+### Initial Key Milestones (set YYYY-MM-DD)
+[milestone table]
+
+### Initial Monthly Focus (set YYYY-MM-DD)
+[monthly breakdown]
+
+---
+
+## Plan Revisions Log (append-only — most recent first)
+
+> Empty at init. Pulse skill (Step 7) appends dated revision entries here when reality diverges from plan.
+
+---
+
+## Current State (live — reflects all revisions to date)
+
+### Current Objectives
+[copy of Initial Objectives at init time; pulse updates this in-place via revisions]
+
+### Current Key Milestones
+[copy of Initial Key Milestones; pulse updates]
+
+### Current Monthly Focus
+[copy of Initial Monthly Focus; pulse updates]
+
+---
+
+## Risks
+[risk table — can be updated via revisions]
+
+## Open Questions
+[question list]
+
+## Links
+[wiki-links]
+```
+
+**KR markers convention:**
+- `[ ]` — concrete, pending
+- `[x]` — done
+- `[?]` — pending discovery; not actionable until info lands. Use for genuinely-unknowable items (e.g. "4 Equity IT peer outreach plan" before knowing peers/cadence). Pulse Step 7 promotes `[?]` → `[ ]` when concrete info lands.
+
+Populate Locked Original + Current State (initially identical) with objectives, KRs, milestones, and monthly focus from Step 4's discussion (manual mode) or auto-mode draft sources.
 
 ### Step 6: Open the file
 Run `obsidian open path="00_Strategy/YYYY-QX/Quarterly Plan.md"` to open the file in Obsidian.

@@ -53,6 +53,8 @@ Check whether `00_Strategy/YYYY-QX/Monthly Pulse - MM.md` exists for **last mont
 
 This fires on the first `/daily-init` of a new month, regardless of which day that is.
 
+**This trigger is NON-NEGOTIABLE.** When the condition fires, run the skill — do NOT flag-and-skip just because the downstream skill might involve secondary interactive sub-steps. The quarterly-plan skill's Step 5 (calendar/reminder creation) explicitly skips itself in auto-mode, so the auto-trigger will complete without any user prompts. If you find yourself reasoning "I'll just flag this for the user to run later," stop — that reasoning is the regression that caused the April 2026 pulse to be missed for 2 consecutive days. Run the skill.
+
 ### 1d. Close last quarter (new-quarter boundary)
 Check whether today's quarter differs from last quarter. If so, check whether `00_Strategy/YYYY-Q(X-1)/Quarterly Review.md` exists for **last quarter**.
 - If it does **not** exist → run `/quarterly-plan review` for last quarter, wait for completion.
