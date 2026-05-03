@@ -19,8 +19,13 @@ Operator is an opinionated system of 19 Claude Code skills that turn an Obsidian
 **Codex CLI**:
 
 ```bash
+# 1. Add the marketplace (from your shell)
 codex plugin marketplace add yuhanwang14/obsidian-operator
-# then enable obsidian-operator in Codex's plugin manager
+
+# 2. Launch Codex and enable the plugin via the TUI
+codex
+> /plugin           # opens the plugin manager — toggle obsidian-operator on
+> /vault-init       # walk through vault setup
 ```
 
 > Upgrading from v1.9.x manual install? Remove the stale symlink first: `rm ~/.agents/skills/obsidian-operator`. See [docs/README.codex.md](docs/README.codex.md#upgrading-from-v19x-manual-install) for full upgrade steps.

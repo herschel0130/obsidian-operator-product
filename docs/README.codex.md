@@ -4,7 +4,7 @@ How obsidian-operator's 19 skills work on OpenAI Codex CLI. For install, see the
 
 ## How discovery works
 
-Obsidian Operator ships as a Codex plugin (v2.0.0+). Once installed via `codex plugin marketplace add yuhanwang14/obsidian-operator` and enabled in Codex's plugin manager, Codex routes by each SKILL.md's `description` frontmatter:
+Obsidian Operator ships as a Codex plugin (v2.0.0+). After `codex plugin marketplace add yuhanwang14/obsidian-operator` and enabling via `/plugin` inside the Codex TUI, Codex routes by each SKILL.md's `description` frontmatter:
 
 - `/daily-init 6` → matches `daily-init` description's slash trigger
 - "start my day" → matches `daily-init` description's natural-language phrase
@@ -69,7 +69,7 @@ grep -A1 'obsidian-operator' ~/.codex/config.toml
 # Expected: [plugins."obsidian-operator@..."] enabled = true
 ```
 
-If missing, run `codex plugin marketplace add yuhanwang14/obsidian-operator` and enable in plugin manager.
+If missing, run `codex plugin marketplace add yuhanwang14/obsidian-operator`, then `codex` and `/plugin` to enable.
 
 ### Hook not firing on `/daily-init`
 
@@ -105,5 +105,6 @@ Then install via the new flow:
 
 ```bash
 codex plugin marketplace add yuhanwang14/obsidian-operator
-# enable obsidian-operator in Codex's plugin manager
+codex
+> /plugin           # toggle obsidian-operator on in the plugin manager
 ```
