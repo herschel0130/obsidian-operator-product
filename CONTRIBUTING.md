@@ -6,7 +6,7 @@ Thanks for your interest in improving Operator! This guide covers how to contrib
 
 ### Reporting Bugs
 
-Open a [GitHub issue](https://github.com/yuhanwang14/Obsidian-Operator/issues) with:
+Open a [GitHub issue](https://github.com/herschel0130/obsidian-operator-product/issues) with:
 
 - Which skill is affected (e.g. `daily-init`, `meeting`)
 - Steps to reproduce

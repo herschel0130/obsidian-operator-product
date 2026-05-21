@@ -1,0 +1,26 @@
+{
+  "name": "operator-control",
+  "version": "0.1.0",
+  "description": "Obsidian desktop control panel for Obsidian Operator onboarding and daily workflows.",
+  "main": "main.js",
+  "scripts": {
+    "build": "tsc -noEmit && node esbuild.config.mjs production",
+    "dev": "node esbuild.config.mjs",
+    "test": "node scripts/run-tests.mjs",
+    "check": "npm run test && npm run build"
+  },
+  "keywords": [
+    "obsidian",
+    "operator",
+    "codex",
+    "productivity"
+  ],
+  "author": "Herschel, based on Obsidian Operator by Yuhan Wang",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.25.0",
+    "obsidian": "^1.8.7",
+    "typescript": "^5.9.3"
+  }
+}

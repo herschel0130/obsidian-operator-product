@@ -1,0 +1,10 @@
+{
+  "id": "operator-control",
+  "name": "Operator",
+  "version": "0.1.0",
+  "minAppVersion": "1.7.2",
+  "description": "Run Obsidian Operator setup, daily briefings, and project creation from a native Obsidian dashboard.",
+  "author": "Herschel, based on Obsidian Operator by Yuhan Wang",
+  "authorUrl": "https://github.com/herschel0130/obsidian-operator-product",
+  "isDesktopOnly": true
+}

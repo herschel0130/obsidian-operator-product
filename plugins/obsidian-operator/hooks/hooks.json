@@ -6,13 +6,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "_R=\"${CLAUDE_PLUGIN_ROOT}\"; [ -z \"$_R\" ] && _R=\"$HOME/.claude/plugins/marketplaces/yuhanwang14/obsidian-operator/plugins/obsidian-operator\"; bash \"$_R/hooks/preflight-enforce.sh\"",
+            "command": "_R=\"${CLAUDE_PLUGIN_ROOT}\"; [ -z \"$_R\" ] && _R=\"$HOME/.claude/plugins/marketplaces/herschel0130/obsidian-operator-product/plugins/obsidian-operator\"; bash \"$_R/hooks/preflight-enforce.sh\"",
             "timeout": 5000,
             "statusMessage": "Checking daily-init pre-flight..."
           },
           {
             "type": "command",
-            "command": "_R=\"${CLAUDE_PLUGIN_ROOT}\"; [ -z \"$_R\" ] && _R=\"$HOME/.claude/plugins/marketplaces/yuhanwang14/obsidian-operator/plugins/obsidian-operator\"; bash \"$_R/hooks/deep-research-enforce.sh\"",
+            "command": "_R=\"${CLAUDE_PLUGIN_ROOT}\"; [ -z \"$_R\" ] && _R=\"$HOME/.claude/plugins/marketplaces/herschel0130/obsidian-operator-product/plugins/obsidian-operator\"; bash \"$_R/hooks/deep-research-enforce.sh\"",
             "timeout": 3000,
             "statusMessage": "Checking deep-research dispatch policy..."
           }

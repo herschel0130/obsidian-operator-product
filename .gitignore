@@ -7,6 +7,12 @@ Thumbs.db
 *.swo
 *~
 
+# Node / Obsidian plugin build output
+node_modules/
+main.js
+main.js.map
+.test-out/
+
 # Environment / secrets
 .env
 .env.*

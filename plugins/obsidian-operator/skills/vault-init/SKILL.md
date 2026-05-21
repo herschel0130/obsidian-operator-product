@@ -35,7 +35,7 @@ The Quick Start + Configuration sections of the README (`cp -r vault-template/*`
      | sort -V | tail -1
    ```
 
-   Use the first path that exists **and** contains both `vault-template/` and `CLAUDE.md`. If none do, ask the user: "I can't find the vault-init assets. Did you install via `/plugin install obsidian-operator` (Claude Code) or `codex plugin marketplace add yuhanwang14/obsidian-operator` (Codex CLI)? (Paste the repo path and I'll look inside `plugins/obsidian-operator/skills/vault-init/assets/`.)"
+   Use the first path that exists **and** contains both `vault-template/` and `CLAUDE.md`. If none do, ask the user: "I can't find the vault-init assets. Did you install via `/plugin install obsidian-operator` (Claude Code) or `codex plugin marketplace add herschel0130/obsidian-operator-product` (Codex CLI)? (Paste the repo path and I'll look inside `plugins/obsidian-operator/skills/vault-init/assets/`.)"
 
    If the user gives a local repo path, append `plugins/obsidian-operator/skills/vault-init/assets` and verify the two files are there before proceeding.
 
