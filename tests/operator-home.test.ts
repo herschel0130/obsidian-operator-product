@@ -410,6 +410,13 @@ test("dashboard wires blocker rows to native done actions", () => {
   assert.match(source, /"Open blockers"[\s\S]*!home\.blockersExists/);
 });
 
+test("today next actions exclude carried-forward daily items", () => {
+  const source = readFileSync("src/main.ts", "utf8");
+
+  assert.match(source, /const actions = home\.daily\.tasks\.slice\(0, 8\)/);
+  assert.doesNotMatch(source, /\.\.\.home\.daily\.carriedForward/);
+});
+
 test("does not update ambiguous duplicate markdown task lines", async () => {
   const app = createFakeApp();
   await app.vault.create("01_Execution/2026-W21/Weekly Todo.md", [

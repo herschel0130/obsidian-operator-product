@@ -681,7 +681,7 @@ class OperatorDashboardView extends ItemView {
 
     const tasks = grid.createDiv({ cls: "operator-note-panel" });
     tasks.createEl("h4", { text: "Next actions" });
-    const actions = [...home.daily.tasks, ...home.daily.carriedForward].slice(0, 8);
+    const actions = home.daily.tasks.slice(0, 8);
     this.renderActionItems(tasks, actions, home.dailyNotePath, home.weeklyTodo.openTasks.length > 0
       ? "Today's note has no open tasks. Check the weekly list below."
       : "No open tasks found yet.");
