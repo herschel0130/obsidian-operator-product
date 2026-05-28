@@ -5,7 +5,7 @@ import { appendQuickCapture, readOperatorHomeState, updateMarkdownTaskState } fr
 import { buildCliHandoff } from "../src/cli-handoff";
 import { buildProjectNote, createNativeProject, normalizeProjectName } from "../src/projects";
 import { parseActiveProjectNote, parseBlockers, parseDailyNote, parseWeeklyTodo } from "../src/vault-parsers";
-import { buildDefaultDailyPrompt, buildStartDaySpec, buildWorkflowSpec, describePrompt, resolveAdvancedPrompt } from "../src/workflows";
+import { buildAdvancedPromptPlaceholder, buildDefaultDailyPrompt, buildStartDaySpec, buildWorkflowSpec, describePrompt, resolveAdvancedPrompt } from "../src/workflows";
 
 test("computes ISO week folders and daily note paths", () => {
   const date = new Date("2026-01-01T12:00:00");
@@ -226,6 +226,7 @@ test("builds editable workflow prompt specs", () => {
 
   assert.equal(buildDefaultDailyPrompt(4.5), "/daily-init 4.5");
   assert.equal(buildDefaultDailyPrompt(Number.NaN), "/daily-init 6");
+  assert.equal(buildAdvancedPromptPlaceholder(4.5), "/daily-init 4.5, /project-init MyProject, or review a note");
   assert.equal(resolveAdvancedPrompt("", 4.5), "/daily-init 4.5");
   assert.equal(resolveAdvancedPrompt("  /weekly-review  ", 4.5), "/weekly-review");
 

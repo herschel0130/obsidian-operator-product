@@ -79,6 +79,10 @@ export function buildDefaultDailyPrompt(hours: number): string {
   return `/daily-init ${normalizeDailyHours(hours)}`;
 }
 
+export function buildAdvancedPromptPlaceholder(hours: number): string {
+  return `${buildDefaultDailyPrompt(hours)}, /project-init MyProject, or review a note`;
+}
+
 export function resolveAdvancedPrompt(prompt: string, availableHours: number): string {
   return prompt.trim() || buildDefaultDailyPrompt(availableHours);
 }

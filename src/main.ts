@@ -38,6 +38,7 @@ import {
 import type { MarkdownActionItem } from "./vault-parsers";
 import { initializeVault, type VaultInitializationResult } from "./vault-init";
 import {
+  buildAdvancedPromptPlaceholder,
   buildDefaultDailyPrompt,
   buildStartDaySpec,
   buildWorkflowSpec,
@@ -811,7 +812,7 @@ class OperatorDashboardView extends ItemView {
     const advanced = createWorkflowCard(grid, "Agent prompt / CLI command", "Run any slash command or freeform agent prompt without leaving Obsidian.");
     const custom = advanced.createEl("textarea", {
       cls: "operator-prompt-input",
-      attr: { rows: "3", placeholder: "/daily-init 6, /project-init MyProject, or review a note" },
+      attr: { rows: "3", placeholder: buildAdvancedPromptPlaceholder(this.plugin.settings.availableHours) },
     });
     createButton(advanced, "copy", "Copy CLI handoff", () => {
       const prompt = resolveAdvancedPrompt(custom.value, this.plugin.settings.availableHours);
