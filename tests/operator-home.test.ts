@@ -225,6 +225,26 @@ test("parses today note focus, actions, schedule, and capture count", () => {
   assert.equal(summary.captureCount, 1);
 });
 
+test("does not surface deferred future daily items as today's next actions", () => {
+  const summary = parseDailyNote(`# 2026-05-22
+
+## Briefing
+
+### Action Items
+
+- [ ] Review UI against real vault
+- [>] Carry project note edits
+
+#### Deferred
+
+- [>] Submit tax paperwork -> 2026-06-01
+- [>] Book dentist -> next Friday
+`);
+
+  assert.deepEqual(summary.tasks.map((item) => item.text), ["Review UI against real vault"]);
+  assert.deepEqual(summary.carriedForward.map((item) => item.text), ["Carry project note edits"]);
+});
+
 test("parses weekly todo open work separately from completed work", () => {
   const summary = parseWeeklyTodo(`# Weekly Todo
 

@@ -138,7 +138,7 @@ export function parseDailyNote(markdown: string, exists = markdown.trim().length
 
   const taskLines = [
     extractHeadingSection(markdown, "Tasks"),
-    extractHeadingSectionAtAnyLevel(markdown, "Action Items"),
+    removeNestedHeadingSection(extractHeadingSectionAtAnyLevel(markdown, "Action Items"), "Deferred"),
     extractHeadingSectionAtAnyLevel(markdown, "Next Actions"),
   ].join("\n");
   const parsedTasks = taskLines
@@ -244,6 +244,34 @@ export function extractHeadingSectionAtAnyLevel(markdown: string, heading: strin
   }
 
   return section.join("\n").trim();
+}
+
+function removeNestedHeadingSection(markdown: string, heading: string): string {
+  const lines = markdown.split(/\r?\n/);
+  const markerPattern = new RegExp(`^#{1,6}\\s+${escapeRegExp(heading)}\\s*$`, "i");
+  const result: string[] = [];
+  let skipLevel: number | null = null;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const headingMatch = trimmed.match(/^(#{1,6})\s+/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      if (skipLevel !== null && level <= skipLevel) {
+        skipLevel = null;
+      }
+      if (markerPattern.test(trimmed)) {
+        skipLevel = level;
+        continue;
+      }
+    }
+
+    if (skipLevel === null) {
+      result.push(line);
+    }
+  }
+
+  return result.join("\n").trim();
 }
 
 export function cleanMarkdownLine(line: string): string {
