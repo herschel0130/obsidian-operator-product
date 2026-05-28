@@ -359,6 +359,10 @@ test("builds editable workflow prompt specs", () => {
   assert.equal(projectSync.label, "Sync FM-Copilot");
   assert.equal(buildWorkflowSpec("deadline-plan", "FM-Copilot", date).label, "Plan deadline FM-Copilot");
   assert.match(projectSync.prompt, /^\/project-sync FM-Copilot\n\nOperator run metadata/);
+  assert.equal(buildWorkflowSpec("meeting-prep", "FM-Copilot 2026-05-29", date).label, "Prep meeting FM-Copilot 2026-05-29");
+  assert.equal(buildWorkflowSpec("content-draft", "pricing launch notes", date).label, "Draft pricing launch notes");
+  assert.equal(buildWorkflowSpec("content-draft", "", date).label, "Draft content");
+  assert.equal(buildWorkflowSpec("deep-research", "operator onboarding UX", date).label, "Deep research operator onboarding UX");
   assert.match(describePrompt("/annual-vision review", date).prompt, /^\/annual-vision review\n\nOperator run metadata/);
   assert.match(buildWorkflowSpec("quarterly-plan", "pulse 05", date).prompt, /^\/quarterly-plan pulse 05\n\nOperator run metadata/);
   assert.match(describePrompt("/quarterly-plan init", date).prompt, /^\/quarterly-plan init\n\nOperator run metadata/);

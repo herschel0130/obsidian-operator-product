@@ -179,7 +179,7 @@ export function buildWorkflowSpec(
         "Pasted event descriptions and project context",
       ], ["Apple Calendar/Reminders and project Upcoming Events.md staging notes"], date);
     case "meeting-prep":
-      return simpleSpec(id, "Prep meeting", withArgs("/meeting-prep", cleanedArgs), [
+      return simpleSpec(id, withTargetLabel("Prep meeting", cleanedArgs, "Prep meeting"), withArgs("/meeting-prep", cleanedArgs), [
         "Project note, current Blockers, Weekly Todo, recent daily notes, deadline plans",
       ], ["Project Meeting Plan note"], date);
     case "meeting":
@@ -191,12 +191,12 @@ export function buildWorkflowSpec(
         "Recent daily notes, thinking notes, newsletter email when configured",
       ], ["05_Content/Backlog.md"], date);
     case "content-draft":
-      return simpleSpec(id, "Draft content", withArgs("/content-draft", cleanedArgs), [
+      return simpleSpec(id, withTargetLabel("Draft", cleanedArgs, "Draft content"), withArgs("/content-draft", cleanedArgs), [
         "05_Content/Backlog.md, Voice Guide.md, selected source notes",
       ], ["05_Content/Drafts/"], date);
     case "deep-research":
       return {
-        ...simpleSpec(id, "Deep research", withArgs("/deep-research", cleanedArgs), [
+        ...simpleSpec(id, withTargetLabel("Deep research", cleanedArgs, "Deep research"), withArgs("/deep-research", cleanedArgs), [
           "Vault project context and web sources",
         ], ["04_Knowledge/<Project>/Research/ or general knowledge note"], date),
         search: true,
