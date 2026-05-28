@@ -269,11 +269,14 @@ test("native project creation and quick capture update the markdown home state",
   }, date);
   assert.equal(project.notePath, "02_Projects/Customer-Discovery/Customer-Discovery.md");
 
-  await appendQuickCapture(app as never, "task", "Review interview notes", date);
+  await appendQuickCapture(app as never, "task", "Review interview notes\nSend follow-up", date);
   const home = await readOperatorHomeState(app as never, date);
+  const dailyFile = app.vault.getAbstractFileByPath("01_Execution/2026-W21/2026-05-22.md");
+  const dailyMarkdown = await app.vault.read(dailyFile as { path: string });
 
   assert.equal(home.daily.exists, true);
-  assert.equal(home.daily.captureCount, 1);
+  assert.equal(home.daily.captureCount, 2);
+  assert.match(dailyMarkdown, /- \[ \] Review interview notes\n- \[ \] Send follow-up/);
   assert.deepEqual(home.activeProjects.map((item) => item.name), ["Customer-Discovery"]);
   assert.deepEqual(home.activeProjects[0].nextActions, ["Interview five users"]);
 });

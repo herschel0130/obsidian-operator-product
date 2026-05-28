@@ -58,15 +58,15 @@ export async function appendQuickCapture(
   text: string,
   date = new Date(),
 ): Promise<string> {
-  const trimmed = text.trim();
-  if (!trimmed) {
+  const captureItems = normalizeCaptureItems(text);
+  if (captureItems.length === 0) {
     throw new Error("Capture text is empty.");
   }
 
   const dailyPath = getDailyNotePath(date);
   await ensureFolderPath(app, getExecutionWeekFolder(date));
   const file = await ensureDailyNote(app, dailyPath, date);
-  const line = formatCaptureLine(kind, trimmed);
+  const line = captureItems.map((item) => formatCaptureLine(kind, item)).join("\n");
 
   await app.vault.process(file, (current) => insertUnderCapture(current, line));
   return dailyPath;
@@ -154,6 +154,14 @@ function insertUnderCapture(markdown: string, line: string): string {
   }
 
   return markdown.replace(/(^## Capture\s*$)/m, `$1\n${line}`);
+}
+
+function normalizeCaptureItems(text: string): string[] {
+  return text
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
 }
 
 function formatCaptureLine(kind: "idea" | "task" | "meeting" | "research", text: string): string {

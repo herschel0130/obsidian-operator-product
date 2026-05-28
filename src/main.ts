@@ -936,7 +936,10 @@ class OperatorDashboardView extends ItemView {
     select.createEl("option", { attr: { value: "research" }, text: "Research question" });
     const field = row.createDiv({ cls: "operator-field operator-grow" });
     field.createEl("label", { text: "Capture" });
-    const input = field.createEl("input", { attr: { placeholder: "Something worth keeping..." } });
+    const input = field.createEl("textarea", {
+      cls: "operator-manual-input",
+      attr: { rows: "2", placeholder: "Something worth keeping..." },
+    });
     createButton(row, "plus", "Capture", () => {
       void this.plugin.appendCapture(select.value as "idea" | "task" | "meeting" | "research", input.value);
       input.value = "";
