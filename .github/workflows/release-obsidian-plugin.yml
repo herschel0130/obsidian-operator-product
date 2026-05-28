@@ -27,10 +27,14 @@ jobs:
       - name: Build and test
         run: npm run check
 
+      - name: Package plugin zip
+        run: npm run package:plugin
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           files: |
+            dist/operator-control.zip
             main.js
             manifest.json
             styles.css

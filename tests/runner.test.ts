@@ -1,4 +1,7 @@
 import { strict as assert } from "node:assert";
+import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import {
   buildBackendCommand,
@@ -72,4 +75,24 @@ test("can cancel a running process", async () => {
 
   assert.equal(result.cancelled, true);
   assert.notEqual(result.signal, null);
+});
+
+test("runCommand lets absolute npm shims find interpreters beside the command", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "operator-runner-"));
+  const fakeNode = join(dir, "fake-node");
+  const fakeCodex = join(dir, "codex");
+
+  writeFileSync(fakeNode, "#!/bin/sh\necho shim-ok\n");
+  writeFileSync(fakeCodex, "#!/usr/bin/env fake-node\n");
+  chmodSync(fakeNode, 0o755);
+  chmodSync(fakeCodex, 0o755);
+
+  const result = await runCommand({
+    command: fakeCodex,
+    args: [],
+    env: { PATH: "/usr/bin:/bin" },
+  }).done;
+
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.stdout.trim(), "shim-ok");
 });

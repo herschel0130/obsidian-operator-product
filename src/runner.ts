@@ -1,4 +1,5 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "child_process";
+import { delimiter, dirname, isAbsolute } from "path";
 import type { OperatorBackend } from "./settings";
 
 export interface CommandSpec {
@@ -97,7 +98,7 @@ export function truncateOutput(value: string, maxLength = 12000): string {
 export function runCommand(spec: CommandSpec, options: RunCommandOptions = {}): RunningProcess {
   const child = spawn(spec.command, spec.args, {
     cwd: spec.cwd,
-    env: { ...process.env, ...spec.env },
+    env: buildCommandEnv(spec),
     shell: false,
   });
 
@@ -169,4 +170,16 @@ export function runCommand(spec: CommandSpec, options: RunCommandOptions = {}): 
     },
     done,
   };
+}
+
+function buildCommandEnv(spec: CommandSpec): NodeJS.ProcessEnv {
+  const env = { ...process.env, ...spec.env };
+  if (!isAbsolute(spec.command)) {
+    return env;
+  }
+
+  const commandDir = dirname(spec.command);
+  const existingPath = env.PATH ?? "";
+  env.PATH = existingPath ? `${commandDir}${delimiter}${existingPath}` : commandDir;
+  return env;
 }

@@ -27,7 +27,13 @@ import {
   type RunningProcess,
 } from "./runner";
 import { DEFAULT_SETTINGS, type OperatorRunRecord, type OperatorSettings } from "./settings";
-import { canRunCodexWorkflows, checkEnvironment, type OperatorEnvironmentStatus, type StatusState } from "./status";
+import {
+  canRunBackendWorkflows,
+  checkEnvironment,
+  getBackendReadiness,
+  type OperatorEnvironmentStatus,
+  type StatusState,
+} from "./status";
 import { initializeVault, type VaultInitializationResult } from "./vault-init";
 import {
   buildStartDaySpec,
@@ -37,6 +43,10 @@ import {
 } from "./workflows";
 
 const VIEW_TYPE_OPERATOR = "operator-control-view";
+const CLAUDE_INSTALL_COMMANDS = [
+  "/plugin marketplace add https://github.com/herschel0130/obsidian-operator-product",
+  "/plugin install obsidian-operator",
+].join("\n");
 
 export default class OperatorControlPlugin extends Plugin {
   settings: OperatorSettings = { ...DEFAULT_SETTINGS };
@@ -131,10 +141,11 @@ export default class OperatorControlPlugin extends Plugin {
       return;
     }
 
-    const installed = this.status?.operatorSkills === "ready" || this.status?.operatorSkills === "warning";
+    const status = this.status ?? (await this.refreshStatus());
+    const installed = status.operatorSkills === "ready" || status.operatorSkills === "warning";
     const spec = installed
-      ? buildCodexMarketplaceUpgradeCommand(this.settings.codexPath)
-      : buildCodexMarketplaceAddCommand(this.settings.codexPath, this.settings.repoSource);
+      ? buildCodexMarketplaceUpgradeCommand(status.resolvedPaths.codex)
+      : buildCodexMarketplaceAddCommand(status.resolvedPaths.codex, this.settings.repoSource);
 
     const startedAt = new Date().toISOString();
     this.activeRunBuffer = {
@@ -222,16 +233,17 @@ export default class OperatorControlPlugin extends Plugin {
     }
 
     const status = this.status ?? (await this.refreshStatus());
-    if (this.settings.backend === "codex" && !canRunCodexWorkflows(status)) {
-      new Notice("Finish setup first: Codex, login, skills, and vault initialization must be ready.");
+    const readiness = getBackendReadiness(status, this.settings.backend);
+    if (!readiness.ready) {
+      new Notice(`Finish setup first: ${readiness.helpText}`);
       return;
     }
 
     const spec = buildBackendCommand(
       this.settings.backend,
       {
-        codexPath: this.settings.codexPath,
-        claudePath: this.settings.claudePath,
+        codexPath: status.resolvedPaths.codex,
+        claudePath: status.resolvedPaths.claude,
         vaultPath,
       },
       prompt,
@@ -435,13 +447,17 @@ class OperatorDashboardView extends ItemView {
   private renderOnboarding(root: HTMLElement, status: OperatorEnvironmentStatus): void {
     const section = createSection(root, "Get started", "Set up the Markdown system once, then use Operator Home as a light native control layer.");
     const steps = section.createDiv({ cls: "operator-onboarding-grid" });
+    const backend = this.plugin.settings.backend;
+    const backendLabel = backend === "codex" ? "Codex" : "Claude";
+    const backendSkillsReady = backend === "codex" ? status.operatorSkills === "ready" : status.claudeSkills === "ready";
+    const readiness = getBackendReadiness(status, backend);
 
     renderStepCard(
       steps,
       "1",
-      "Install skills",
-      status.operatorSkills === "ready" ? "Operator skills are installed." : "Install or update the Codex skill bundle.",
-      status.operatorSkills === "ready" ? "ready" : "needed",
+      `Install ${backendLabel} skills`,
+      backendSkillsReady ? `${backendLabel} Operator skills are installed.` : `Install the Operator skills for ${backendLabel}.`,
+      backendSkillsReady ? "ready" : "needed",
     );
     renderStepCard(
       steps,
@@ -454,22 +470,16 @@ class OperatorDashboardView extends ItemView {
       steps,
       "3",
       "Start day",
-      canRunCodexWorkflows(status) ? "Daily briefing is ready to run." : "Start my day unlocks after Codex, login, skills, and vault setup are ready.",
-      canRunCodexWorkflows(status) ? "ready" : "locked",
+      readiness.ready ? "Daily briefing is ready to run." : readiness.helpText,
+      readiness.ready ? "ready" : "locked",
     );
 
-    const controls = section.createDiv({ cls: "operator-controls-row" });
-    createButton(controls, "download", status.operatorSkills === "ready" || status.operatorSkills === "warning" ? "Update Operator skills" : "Install Operator skills", () => {
-      void this.plugin.installOrUpdateCodexMarketplace();
-    }, undefined, status.codexCli !== "ready" || !!this.plugin.activeRun);
-    createButton(controls, "folder-check", status.vault.ready ? "Refresh vault setup" : "Initialize vault", () => {
-      void this.plugin.initializeVaultFromUi();
-    }, "mod-cta", !!this.plugin.activeRun);
+    this.renderSetupControls(section, status);
 
-    if (status.codexCli !== "ready" || status.codexLogin !== "ready") {
+    if (!readiness.ready) {
       section.createEl("p", {
         cls: "operator-help",
-        text: "Codex CLI and login are required before agent workflows can run. Setup health below shows the exact missing piece.",
+        text: `${readiness.helpText} Setup health below shows the exact missing piece.`,
       });
     }
   }
@@ -483,18 +493,38 @@ class OperatorDashboardView extends ItemView {
     renderStatusTile(grid, "Vault", status.vault.ready ? "ready" : "missing", status.vault.ready
       ? "Core folders and agent config are present."
       : `Missing ${status.vault.missingFolders.length + status.vault.missingFiles.length} setup item(s).`);
-    renderStatusTile(grid, "Codex CLI", status.codexCli, status.details.codexCli);
-    renderStatusTile(grid, "Codex login", status.codexLogin, status.details.codexLogin);
-    renderStatusTile(grid, "Operator skills", status.operatorSkills, status.details.operatorSkills);
+    if (this.plugin.settings.backend === "codex") {
+      renderStatusTile(grid, "Codex CLI", status.codexCli, status.details.codexCli);
+      renderStatusTile(grid, "Codex login", status.codexLogin, status.details.codexLogin);
+      renderStatusTile(grid, "Codex Operator skills", status.operatorSkills, status.details.operatorSkills);
+      renderStatusTile(grid, "Claude CLI", status.claudeCli, status.details.claudeCli, true);
+      renderStatusTile(grid, "Claude Operator skills", status.claudeSkills, status.details.claudeSkills, true);
+    } else {
+      renderStatusTile(grid, "Claude CLI", status.claudeCli, status.details.claudeCli);
+      renderStatusTile(grid, "Claude Operator skills", status.claudeSkills, status.details.claudeSkills);
+      renderStatusTile(grid, "Codex CLI", status.codexCli, status.details.codexCli, true);
+      renderStatusTile(grid, "Codex login", status.codexLogin, status.details.codexLogin, true);
+      renderStatusTile(grid, "Codex Operator skills", status.operatorSkills, status.details.operatorSkills, true);
+    }
     renderStatusTile(grid, "Gmail", status.gmail, status.details.gmail, true);
     renderStatusTile(grid, "Gemini", status.gemini, status.details.gemini, true);
     renderStatusTile(grid, "Calendar", status.calendar, status.details.calendar, true);
     renderStatusTile(grid, "Multi-agent", status.multiAgent, status.details.multiAgent, true);
 
+    this.renderSetupControls(section, status);
+  }
+
+  private renderSetupControls(section: HTMLElement, status: OperatorEnvironmentStatus): void {
     const controls = section.createDiv({ cls: "operator-controls-row" });
-    createButton(controls, "download", status.operatorSkills === "ready" || status.operatorSkills === "warning" ? "Update Operator skills" : "Install Operator skills", () => {
-      void this.plugin.installOrUpdateCodexMarketplace();
-    }, undefined, status.codexCli !== "ready" || !!this.plugin.activeRun);
+    if (this.plugin.settings.backend === "codex") {
+      createButton(controls, "download", status.operatorSkills === "ready" || status.operatorSkills === "warning" ? "Update Codex skills" : "Install Codex skills", () => {
+        void this.plugin.installOrUpdateCodexMarketplace();
+      }, undefined, status.codexCli !== "ready" || !!this.plugin.activeRun);
+    } else {
+      createButton(controls, "copy", "Copy Claude install", () => {
+        void copyTextToClipboard(CLAUDE_INSTALL_COMMANDS, "Claude install commands copied.");
+      }, undefined, !!this.plugin.activeRun);
+    }
     createButton(controls, "folder-check", status.vault.ready ? "Refresh vault setup" : "Initialize vault", () => {
       void this.plugin.initializeVaultFromUi();
     }, "mod-cta", !!this.plugin.activeRun);
@@ -539,9 +569,10 @@ class OperatorDashboardView extends ItemView {
     createButton(row, "list-checks", "Open week", () => void this.plugin.openVaultPath(home.weeklyTodoPath), undefined, !home.weeklyTodo.exists);
 
     if (!canRun) {
+      const readiness = getBackendReadiness(status, this.plugin.settings.backend);
       section.createEl("p", {
         cls: "operator-help",
-        text: "Daily briefing unlocks after Codex, login, Operator skills, and vault setup are ready.",
+        text: `Daily briefing unlocks when setup is ready. ${readiness.helpText}`,
       });
     }
 
@@ -776,10 +807,7 @@ class OperatorDashboardView extends ItemView {
     if (this.plugin.activeRun) {
       return false;
     }
-    if (this.plugin.settings.backend === "codex") {
-      return canRunCodexWorkflows(status);
-    }
-    return status.claudeCli === "ready" && status.vault.ready;
+    return canRunBackendWorkflows(status, this.plugin.settings.backend);
   }
 }
 
@@ -810,16 +838,19 @@ class OperatorSettingTab extends PluginSettingTab {
     addTextSetting(containerEl, "Codex executable", "Command or absolute path for Codex CLI.", this.plugin.settings.codexPath, async (value) => {
       this.plugin.settings.codexPath = value || DEFAULT_SETTINGS.codexPath;
       await this.plugin.saveSettings();
+      await this.plugin.refreshStatus();
     });
 
     addTextSetting(containerEl, "Claude executable", "Command or absolute path for Claude Code CLI.", this.plugin.settings.claudePath, async (value) => {
       this.plugin.settings.claudePath = value || DEFAULT_SETTINGS.claudePath;
       await this.plugin.saveSettings();
+      await this.plugin.refreshStatus();
     });
 
     addTextSetting(containerEl, "Operator marketplace source", "Codex marketplace source for installing or updating skills.", this.plugin.settings.repoSource, async (value) => {
       this.plugin.settings.repoSource = value || DEFAULT_SETTINGS.repoSource;
       await this.plugin.saveSettings();
+      await this.plugin.refreshStatus();
     });
 
     addTextSetting(containerEl, "Vault owner name", "Written into CLAUDE.md and AGENTS.md during vault setup.", this.plugin.settings.vaultOwnerName, async (value) => {
