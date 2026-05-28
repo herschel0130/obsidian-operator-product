@@ -241,14 +241,14 @@ export function buildWorkflowSpec(
       const quarterlyExpectedPath = getQuarterlyExpectedPath(cleanedArgs, date);
       return simpleSpec(id, getQuarterlyWorkflowLabel(cleanedArgs, date), withArgs("/quarterly-plan", getQuarterlyPromptArgs(cleanedArgs, date)), [
         "Annual vision, quarterly plans/reviews, weekly reviews, active projects, horizon items",
-      ], [quarterlyExpectedPath], date, quarterlyExpectedPath, [
+      ], [formatQuarterlyWriteTarget(cleanedArgs, quarterlyExpectedPath)], date, quarterlyExpectedPath, [
         getQuarterlyTargetNote(cleanedArgs, date),
       ]);
     case "annual-vision":
       const annualExpectedPath = getAnnualExpectedPath(cleanedArgs, date);
       return simpleSpec(id, getAnnualWorkflowLabel(cleanedArgs, date), withArgs("/annual-vision", getAnnualPromptArgs(cleanedArgs, date)), [
         "Current and prior annual vision/review, quarterly reviews, active projects",
-      ], [annualExpectedPath], date, annualExpectedPath, [
+      ], [formatAnnualWriteTarget(cleanedArgs, annualExpectedPath)], date, annualExpectedPath, [
         getAnnualTargetNote(cleanedArgs, date),
       ]);
     case "add-events":
@@ -641,6 +641,11 @@ function getAnnualExpectedPath(args: string, date: Date): string {
   return `00_Strategy/${year} ${mode}.md`;
 }
 
+function formatAnnualWriteTarget(args: string, path: string): string {
+  const label = args.toLowerCase().includes("review") ? "Annual review" : "Annual vision";
+  return `${label}: ${path}`;
+}
+
 function getAnnualTargetNote(args: string, date: Date): string {
   const mode = args.toLowerCase().includes("review") ? "Annual review" : "Annual vision";
   const year = resolveAnnualYearInput(mode === "Annual review" ? "review" : "vision", args, date);
@@ -675,6 +680,17 @@ function getQuarterlyExpectedPath(args: string, date: Date): string {
   }
   const quarter = parseQuarterArg(args) ?? getQuarterInfo(date);
   return `00_Strategy/${quarter.label}/Quarterly Plan.md`;
+}
+
+function formatQuarterlyWriteTarget(args: string, path: string): string {
+  const mode = args.split(/\s+/, 1)[0].toLowerCase();
+  if (mode === "review") {
+    return `Quarterly review: ${path}`;
+  }
+  if (mode === "pulse") {
+    return `Monthly pulse: ${path}`;
+  }
+  return `Quarterly plan: ${path}`;
 }
 
 function getQuarterlyTargetNote(args: string, date: Date): string {

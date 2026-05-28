@@ -139,6 +139,26 @@ test("workflow previews name exact daily and weekly write targets", () => {
   ]);
 });
 
+test("strategy workflow previews label exact write targets", () => {
+  const date = new Date("2026-05-22T09:00:00");
+
+  assert.deepEqual(buildWorkflowSpec("annual-vision", "", date).writeAreas, [
+    "Annual vision: 00_Strategy/2026 Vision.md",
+  ]);
+  assert.deepEqual(buildWorkflowSpec("annual-vision", "review", date).writeAreas, [
+    "Annual review: 00_Strategy/2025 Annual Review.md",
+  ]);
+  assert.deepEqual(buildWorkflowSpec("quarterly-plan", "init", date).writeAreas, [
+    "Quarterly plan: 00_Strategy/2026-Q2/Quarterly Plan.md",
+  ]);
+  assert.deepEqual(buildWorkflowSpec("quarterly-plan", "review", date).writeAreas, [
+    "Quarterly review: 00_Strategy/2026-Q1/Quarterly Review.md",
+  ]);
+  assert.deepEqual(buildWorkflowSpec("quarterly-plan", "pulse", date).writeAreas, [
+    "Monthly pulse: 00_Strategy/2026-Q2/Monthly Pulse - 04.md",
+  ]);
+});
+
 test("quarterly-plan skill documents explicit UI targets", () => {
   const skill = readFileSync("plugins/obsidian-operator/skills/quarterly-plan/SKILL.md", "utf8");
 
@@ -655,13 +675,13 @@ test("builds editable workflow prompt specs", () => {
   assert.equal(describePrompt(mondayWeeklyReview.prompt, new Date("2026-05-25T10:00:00")).expectedOpenPath, "01_Execution/2026-W21/Weekly Review.md");
   assert.equal(buildWorkflowSpec("annual-vision", "", date).expectedOpenPath, "00_Strategy/2026 Vision.md");
   assert.equal(buildWorkflowSpec("annual-vision", "", date).label, "Annual vision 2026");
-  assert.deepEqual(buildWorkflowSpec("annual-vision", "", date).writeAreas, ["00_Strategy/2026 Vision.md"]);
+  assert.deepEqual(buildWorkflowSpec("annual-vision", "", date).writeAreas, ["Annual vision: 00_Strategy/2026 Vision.md"]);
   assert.deepEqual(buildWorkflowSpec("annual-vision", "", date).targetNotes, ["Annual vision target: 2026"]);
   assert.match(buildWorkflowSpec("annual-vision", "", date).prompt, /^\/annual-vision 2026\n\nOperator run metadata/);
   assert.match(buildWorkflowSpec("annual-vision", "review", date).prompt, /^\/annual-vision review 2025\n\nOperator run metadata/);
   assert.equal(buildWorkflowSpec("annual-vision", "review", date).expectedOpenPath, "00_Strategy/2025 Annual Review.md");
   assert.equal(buildWorkflowSpec("annual-vision", "review", date).label, "Annual review 2025");
-  assert.deepEqual(buildWorkflowSpec("annual-vision", "review", date).writeAreas, ["00_Strategy/2025 Annual Review.md"]);
+  assert.deepEqual(buildWorkflowSpec("annual-vision", "review", date).writeAreas, ["Annual review: 00_Strategy/2025 Annual Review.md"]);
   assert.deepEqual(buildWorkflowSpec("annual-vision", "review", date).targetNotes, ["Annual review target: 2025"]);
   assert.equal(buildWorkflowSpec("annual-vision", "review 2026", date).expectedOpenPath, "00_Strategy/2026 Annual Review.md");
   assert.equal(describePrompt("/annual-vision next", date).expectedOpenPath, "00_Strategy/2027 Vision.md");
@@ -670,7 +690,7 @@ test("builds editable workflow prompt specs", () => {
   assert.match(describePrompt("/annual-vision review next", date).prompt, /^\/annual-vision review 2025\n\nOperator run metadata/);
   assert.equal(buildWorkflowSpec("quarterly-plan", "init", date).expectedOpenPath, "00_Strategy/2026-Q2/Quarterly Plan.md");
   assert.equal(buildWorkflowSpec("quarterly-plan", "init", date).label, "Quarter plan 2026-Q2");
-  assert.deepEqual(buildWorkflowSpec("quarterly-plan", "init", date).writeAreas, ["00_Strategy/2026-Q2/Quarterly Plan.md"]);
+  assert.deepEqual(buildWorkflowSpec("quarterly-plan", "init", date).writeAreas, ["Quarterly plan: 00_Strategy/2026-Q2/Quarterly Plan.md"]);
   assert.deepEqual(buildWorkflowSpec("quarterly-plan", "init", date).targetNotes, ["Quarterly plan target: 2026-Q2"]);
   assert.match(buildWorkflowSpec("quarterly-plan", "init", date).prompt, /^\/quarterly-plan init 2026-Q2\n\nOperator run metadata/);
   assert.match(
@@ -683,7 +703,7 @@ test("builds editable workflow prompt specs", () => {
   );
   assert.equal(buildWorkflowSpec("quarterly-plan", "pulse", date).expectedOpenPath, "00_Strategy/2026-Q2/Monthly Pulse - 04.md");
   assert.equal(buildWorkflowSpec("quarterly-plan", "pulse", date).label, "Monthly pulse 2026-04");
-  assert.deepEqual(buildWorkflowSpec("quarterly-plan", "pulse", date).writeAreas, ["00_Strategy/2026-Q2/Monthly Pulse - 04.md"]);
+  assert.deepEqual(buildWorkflowSpec("quarterly-plan", "pulse", date).writeAreas, ["Monthly pulse: 00_Strategy/2026-Q2/Monthly Pulse - 04.md"]);
   assert.deepEqual(buildWorkflowSpec("quarterly-plan", "pulse", date).targetNotes, ["Monthly pulse target: 2026-04"]);
   assert.match(buildWorkflowSpec("quarterly-plan", "pulse", date).prompt, /^\/quarterly-plan pulse 2026-04\n\nOperator run metadata/);
   assert.match(
@@ -712,7 +732,7 @@ test("builds editable workflow prompt specs", () => {
   assert.equal(buildWorkflowSpec("quarterly-plan", "pulse", new Date("2026-01-01T09:00:00")).label, "Monthly pulse 2025-12");
   assert.equal(buildWorkflowSpec("quarterly-plan", "review", date).expectedOpenPath, "00_Strategy/2026-Q1/Quarterly Review.md");
   assert.equal(buildWorkflowSpec("quarterly-plan", "review", date).label, "Quarter review 2026-Q1");
-  assert.deepEqual(buildWorkflowSpec("quarterly-plan", "review", date).writeAreas, ["00_Strategy/2026-Q1/Quarterly Review.md"]);
+  assert.deepEqual(buildWorkflowSpec("quarterly-plan", "review", date).writeAreas, ["Quarterly review: 00_Strategy/2026-Q1/Quarterly Review.md"]);
   assert.deepEqual(buildWorkflowSpec("quarterly-plan", "review", date).targetNotes, ["Quarterly review target: 2026-Q1"]);
   assert.match(buildWorkflowSpec("quarterly-plan", "review", date).prompt, /^\/quarterly-plan review 2026-Q1\n\nOperator run metadata/);
   const quarterReview = buildWorkflowSpec("quarterly-plan", "review", date);
