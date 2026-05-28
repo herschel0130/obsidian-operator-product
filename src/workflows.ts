@@ -90,7 +90,7 @@ export function buildWorkflowSpec(
       ]);
     case "weekly-review":
       const weeklyReviewFolder = getWeeklyReviewFolder(cleanedArgs, date);
-      return simpleSpec(id, "Review this week", "/weekly-review", [
+      return simpleSpec(id, "Review this week", withArgs("/weekly-review", getWeeklyReviewPromptArgs(cleanedArgs, weeklyReviewFolder)), [
         "This week's daily notes, Weekly Todo, Blockers, and active projects",
       ], ["Current week Weekly Review.md"], date, `${weeklyReviewFolder}/Weekly Review.md`, [
         `Review week: ${weeklyReviewFolder.replace("01_Execution/", "")}`,
@@ -98,7 +98,7 @@ export function buildWorkflowSpec(
     case "ai-weekly-digest":
       const aiWeeklyTarget = getAiWeeklyDigestTarget(cleanedArgs, date);
       return {
-        ...simpleSpec(id, "AI weekly digest", withArgs("/ai-weekly-digest", cleanedArgs), [
+        ...simpleSpec(id, "AI weekly digest", withArgs("/ai-weekly-digest", getAiWeeklyDigestPromptArgs(cleanedArgs, aiWeeklyTarget)), [
           "Recent AI research, GitHub trending notes, RSS and web sources",
         ], ["04_Knowledge/AI-Weekly/ and the current Weekly Review when present"], date, `04_Knowledge/AI-Weekly/${aiWeeklyTarget} - AI Weekly Digest.md`, [
           `AI weekly target: ${aiWeeklyTarget}`,
@@ -343,6 +343,10 @@ function getWeeklyReviewFolder(args: string, date: Date): string {
   return `01_Execution/${getIsoWeekInfo(target).label}`;
 }
 
+function getWeeklyReviewPromptArgs(args: string, weeklyReviewFolder: string): string {
+  return args || weeklyReviewFolder.replace("01_Execution/", "");
+}
+
 function getAiWeeklyDigestTarget(args: string, date: Date): string {
   const explicit = args.match(/\b(\d{4}-W\d{2})\b/i)?.[1];
   if (explicit) {
@@ -352,6 +356,10 @@ function getAiWeeklyDigestTarget(args: string, date: Date): string {
     ? addDays(date, -7)
     : date;
   return getIsoWeekInfo(target).label;
+}
+
+function getAiWeeklyDigestPromptArgs(args: string, target: string): string {
+  return args || target;
 }
 
 function getAnnualExpectedPath(args: string, date: Date): string {
