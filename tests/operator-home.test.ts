@@ -184,9 +184,10 @@ test("builds editable workflow prompt specs", () => {
   const date = new Date("2026-05-22T09:00:00");
   const start = buildStartDaySpec(7, "review deck, email Kai", date);
 
-  assert.match(start.prompt, /^\/daily-init 7\n\nRun context:/);
+  assert.match(start.prompt, /^\/daily-init 7\n\nOperator run metadata \(do not treat as manual action items\):/);
   assert.match(start.prompt, /Local date: 2026-05-22/);
   assert.match(start.prompt, /Manual items to consider today:\nreview deck, email Kai/);
+  assert.ok(start.prompt.indexOf("Operator run metadata") < start.prompt.indexOf("Manual items to consider today"));
   assert.equal(start.expectedOpenPath, "01_Execution/2026-W21/2026-05-22.md");
   assert.equal(start.search, true);
 

@@ -568,6 +568,11 @@ class OperatorDashboardView extends ItemView {
     createButton(row, "file-text", "Open today", () => void this.plugin.openVaultPath(home.dailyNotePath), undefined, !home.daily.exists);
     createButton(row, "list-checks", "Open week", () => void this.plugin.openVaultPath(home.weeklyTodoPath), undefined, !home.weeklyTodo.exists);
 
+    section.createEl("p", {
+      cls: "operator-help",
+      text: "Start my day also runs the boundary cascade when needed: weekly review/setup, AI weekly digest, monthly pulse, and quarterly plan/review.",
+    });
+
     if (!canRun) {
       const readiness = getBackendReadiness(status, this.plugin.settings.backend);
       section.createEl("p", {

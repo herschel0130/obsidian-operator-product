@@ -33,7 +33,7 @@ export interface OperatorWorkflowRunSpec {
 export function buildStartDaySpec(hours: number, manualItems: string, date = new Date()): OperatorWorkflowRunSpec {
   const safeHours = Math.max(1, Math.min(16, Math.round(hours || 6)));
   const cleanedManualItems = normalizeInlineArgs(manualItems);
-  const context = `Run context:\n${formatRunContext(date)}`;
+  const context = `Operator run metadata (do not treat as manual action items):\n${formatRunContext(date)}`;
   const prompt = cleanedManualItems
     ? `/daily-init ${safeHours}\n\n${context}\n\nManual items to consider today:\n${cleanedManualItems}`
     : `/daily-init ${safeHours}\n\n${context}`;
