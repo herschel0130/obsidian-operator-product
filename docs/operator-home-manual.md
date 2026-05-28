@@ -99,7 +99,7 @@ Open **More workflows** for less frequent or reasoning-heavy work:
 - **Agent prompt / CLI command** for raw slash commands or freeform prompts.
 - **Copy CLI handoff** copies the vault `cd` command plus the prompt so power users can continue in Codex CLI without the Obsidian UI getting in the way.
 
-Every agent workflow opens a Preview showing the exact prompt and likely read/write areas before launching Codex or Claude. **Start my day** includes local date, time, timezone, ISO week, and quarter as metadata, not manual tasks, so schedule generation does not depend on hidden agent clock assumptions. It also runs the original boundary cascade when needed: weekly review/setup, AI weekly digest, monthly pulse, and quarterly plan/review.
+Every agent workflow opens a Preview showing the exact prompt and likely read/write areas before launching Codex or Claude. Built-in workflows include local date, time, timezone, ISO week, and quarter as metadata, not manual tasks, so daily scheduling, weekly planning, annual vision, quarterly planning, and research runs do not depend on hidden agent clock assumptions. **Start my day** also runs the original boundary cascade when needed: weekly review/setup, AI weekly digest, monthly pulse, and quarterly plan/review.
 
 ## Troubleshooting
 

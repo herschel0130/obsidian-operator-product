@@ -69,77 +69,77 @@ export function buildWorkflowSpec(
     case "weekly-init":
       return simpleSpec(id, "Plan this week", "/weekly-init", [
         "Recent daily notes, last week Weekly Todo, Blockers, project deadline plans",
-      ], ["Current week Weekly Todo and Blockers"]);
+      ], ["Current week Weekly Todo and Blockers"], date);
     case "weekly-review":
       return simpleSpec(id, "Review this week", "/weekly-review", [
         "This week's daily notes, Weekly Todo, Blockers, and active projects",
-      ], ["Current week Weekly Review.md"]);
+      ], ["Current week Weekly Review.md"], date);
     case "ai-weekly-digest":
       return {
         ...simpleSpec(id, "AI weekly digest", withArgs("/ai-weekly-digest", cleanedArgs), [
           "Recent AI research, GitHub trending notes, RSS and web sources",
-        ], ["04_Knowledge/AI-Weekly/ and the current Weekly Review when present"]),
+        ], ["04_Knowledge/AI-Weekly/ and the current Weekly Review when present"], date),
         search: true,
       };
     case "daily-github":
       return {
         ...simpleSpec(id, "GitHub trends", withArgs("/daily-github", cleanedArgs), [
           "GitHub trending sources and today's daily note",
-        ], ["04_Knowledge/GitHub/ and today's daily note summary"]),
+        ], ["04_Knowledge/GitHub/ and today's daily note summary"], date),
         search: true,
       };
     case "daily-academic":
       return {
         ...simpleSpec(id, "Academic scan", withArgs("/daily-academic", cleanedArgs), [
           "arXiv and paper sources for the configured research areas",
-        ], ["04_Knowledge/Academic/ and today's daily note summary"]),
+        ], ["04_Knowledge/Academic/ and today's daily note summary"], date),
         search: true,
       };
     case "project-init":
       return simpleSpec(id, "Create project", withArgs("/project-init", cleanedArgs), [
         "Existing 02_Projects folders for duplicate checks",
-      ], ["New project note and knowledge folder"]);
+      ], ["New project note and knowledge folder"], date);
     case "project-sync":
       return simpleSpec(id, "Sync project", withArgs("/project-sync", cleanedArgs), [
         "Project note, meeting knowledge, research notes, weekly reviews",
-      ], ["Project note synthesis sections"]);
+      ], ["Project note synthesis sections"], date);
     case "deadline-plan":
       return simpleSpec(id, "Plan deadline", withArgs("/deadline-plan", cleanedArgs), [
         "Project note, existing deadline plan, calendar/reminder context when available",
-      ], ["Project Deadline Plan.md and related reminders"]);
+      ], ["Project Deadline Plan.md and related reminders"], date);
     case "quarterly-plan":
       return simpleSpec(id, "Quarterly planning", withArgs("/quarterly-plan", cleanedArgs), [
         "Annual vision, quarterly plans/reviews, weekly reviews, active projects, horizon items",
-      ], ["00_Strategy/YYYY-QX/ planning, review, or monthly pulse notes"]);
+      ], ["00_Strategy/YYYY-QX/ planning, review, or monthly pulse notes"], date);
     case "annual-vision":
       return simpleSpec(id, "Annual vision", withArgs("/annual-vision", cleanedArgs), [
         "Current and prior annual vision/review, quarterly reviews, active projects",
-      ], ["00_Strategy/YYYY Vision.md or YYYY Annual Review.md"]);
+      ], ["00_Strategy/YYYY Vision.md or YYYY Annual Review.md"], date);
     case "add-events":
       return simpleSpec(id, "Add events", withArgs("/add-events", cleanedArgs), [
         "Pasted event descriptions and project context",
-      ], ["Apple Calendar/Reminders and project Upcoming Events.md staging notes"]);
+      ], ["Apple Calendar/Reminders and project Upcoming Events.md staging notes"], date);
     case "meeting-prep":
       return simpleSpec(id, "Prep meeting", withArgs("/meeting-prep", cleanedArgs), [
         "Project note, current Blockers, Weekly Todo, recent daily notes, deadline plans",
-      ], ["Project Meeting Plan note"]);
+      ], ["Project Meeting Plan note"], date);
     case "meeting":
       return simpleSpec(id, "Process meeting", withArgs("/meeting", cleanedArgs), [
         "Provided transcript, recording, or meeting directory plus project context",
-      ], ["Meeting transcript note, meeting knowledge note, routed actions"]);
+      ], ["Meeting transcript note, meeting knowledge note, routed actions"], date);
     case "content-extract":
       return simpleSpec(id, "Extract content ideas", "/content-extract", [
         "Recent daily notes, thinking notes, newsletter email when configured",
-      ], ["05_Content/Backlog.md"]);
+      ], ["05_Content/Backlog.md"], date);
     case "content-draft":
       return simpleSpec(id, "Draft content", withArgs("/content-draft", cleanedArgs), [
         "05_Content/Backlog.md, Voice Guide.md, selected source notes",
-      ], ["05_Content/Drafts/"]);
+      ], ["05_Content/Drafts/"], date);
     case "deep-research":
       return {
         ...simpleSpec(id, "Deep research", withArgs("/deep-research", cleanedArgs), [
           "Vault project context and web sources",
-        ], ["04_Knowledge/<Project>/Research/ or general knowledge note"]),
+        ], ["04_Knowledge/<Project>/Research/ or general knowledge note"], date),
         search: true,
       };
     case "start-day":
@@ -154,7 +154,7 @@ export function describePrompt(prompt: string, date = new Date()): OperatorWorkf
   if (trimmed.startsWith("/daily-init")) {
     return {
       ...buildStartDaySpec(extractDailyHours(trimmed), "", date),
-      prompt: trimmed,
+      prompt: appendRunMetadata(trimmed, date),
     };
   }
 
@@ -181,7 +181,7 @@ export function describePrompt(prompt: string, date = new Date()): OperatorWorkf
   if (known.has(command)) {
     return {
       ...buildWorkflowSpec(command, trimmed.slice(command.length + 1).trim(), date),
-      prompt: trimmed,
+      prompt: appendRunMetadata(trimmed, date),
     };
   }
 
@@ -200,8 +200,9 @@ function simpleSpec(
   prompt: string,
   readAreas: string[],
   writeAreas: string[],
+  date = new Date(),
 ): OperatorWorkflowRunSpec {
-  return { id, label, prompt, readAreas, writeAreas };
+  return { id, label, prompt: appendRunMetadata(prompt, date), readAreas, writeAreas };
 }
 
 function withArgs(command: string, args: string): string {
@@ -215,6 +216,13 @@ function normalizeInlineArgs(value: string): string {
 function extractDailyHours(prompt: string): number {
   const match = prompt.match(/^\/daily-init\s+(\d+(?:\.\d+)?)/);
   return match ? Number(match[1]) : 6;
+}
+
+function appendRunMetadata(prompt: string, date: Date): string {
+  if (prompt.includes("Operator run metadata")) {
+    return prompt;
+  }
+  return `${prompt}\n\nOperator run metadata (do not treat as manual action items):\n${formatRunContext(date)}`;
 }
 
 export function normalizeDailyHours(hours: number): number {

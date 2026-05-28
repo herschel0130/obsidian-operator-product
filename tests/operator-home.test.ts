@@ -233,18 +233,26 @@ test("builds editable workflow prompt specs", () => {
   const fractionalDay = buildStartDaySpec(4.5, "", date);
   assert.match(fractionalDay.prompt, /^\/daily-init 4\.5\n\nOperator run metadata/);
 
-  const projectSync = buildWorkflowSpec("project-sync", "FM-Copilot");
-  assert.equal(projectSync.prompt, "/project-sync FM-Copilot");
+  const projectSync = buildWorkflowSpec("project-sync", "FM-Copilot", date);
+  assert.match(projectSync.prompt, /^\/project-sync FM-Copilot\n\nOperator run metadata/);
+  assert.match(buildWorkflowSpec("annual-vision", "review 2026", date).prompt, /^\/annual-vision review 2026\n\nOperator run metadata/);
+  assert.match(buildWorkflowSpec("quarterly-plan", "pulse 05", date).prompt, /^\/quarterly-plan pulse 05\n\nOperator run metadata/);
+  assert.match(buildWorkflowSpec("quarterly-plan", "init", date).prompt, /^\/quarterly-plan init\n\nOperator run metadata/);
+  assert.match(buildWorkflowSpec("ai-weekly-digest", "last", date).prompt, /^\/ai-weekly-digest last\n\nOperator run metadata/);
 
-  assert.equal(buildWorkflowSpec("annual-vision", "review 2026").prompt, "/annual-vision review 2026");
-  assert.equal(buildWorkflowSpec("quarterly-plan", "pulse 05").prompt, "/quarterly-plan pulse 05");
-  assert.equal(buildWorkflowSpec("quarterly-plan", "init").prompt, "/quarterly-plan init");
-  assert.equal(buildWorkflowSpec("ai-weekly-digest", "last").prompt, "/ai-weekly-digest last");
+  const typedDaily = describePrompt("/daily-init 4.5", date);
+  assert.match(typedDaily.prompt, /^\/daily-init 4\.5\n\nOperator run metadata/);
+
+  const typedWeeklyReview = describePrompt("/weekly-review", date);
+  assert.match(typedWeeklyReview.prompt, /^\/weekly-review\n\nOperator run metadata/);
 
   const described = describePrompt("/deep-research AI evals", date);
   assert.equal(described.id, "deep-research");
-  assert.equal(described.prompt, "/deep-research AI evals");
+  assert.match(described.prompt, /^\/deep-research AI evals\n\nOperator run metadata/);
   assert.equal(described.search, true);
+
+  const custom = describePrompt("review the current note", date);
+  assert.equal(custom.prompt, "review the current note");
 });
 
 function createFakeApp(): {
