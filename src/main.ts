@@ -872,7 +872,7 @@ class OperatorDashboardView extends ItemView {
 
     const meeting = createWorkflowCard(grid, "Process meeting", "Prep before, process transcript after.");
     const meetingProject = createInlineInput(meeting, "Project", "ProjectAlpha", home.activeProjects[0]?.name ?? "");
-    const meetingDate = createInlineInput(meeting, "Date", "YYYY-MM-DD", formatDateKey(new Date()));
+    const meetingDate = createInlineInput(meeting, "Date", "YYYY-MM-DD", formatDateKey(now));
     const meetingInput = createBlockInput(meeting, "Transcript path or text", "Paste transcript text, or enter a local transcript/audio path");
     createAgentWorkflowButton(meeting, "clipboard-list", "Prep", () => {
       const projectName = requireInput(meetingProject, "a project name");

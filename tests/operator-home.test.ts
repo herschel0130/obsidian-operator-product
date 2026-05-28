@@ -113,6 +113,8 @@ test("builds date-aware workflow input placeholders", () => {
   assert.equal(buildStrategyPeriodPlaceholder(date), "2026-Q2 or 2026-05");
   assert.match(source, /const now = new Date\(\);[\s\S]*buildWeeklyPeriodPlaceholder\(now\)/);
   assert.match(source, /buildStrategyPeriodPlaceholder\(now\)/);
+  assert.match(source, /createInlineInput\(meeting, "Date", "YYYY-MM-DD", formatDateKey\(now\)\)/);
+  assert.doesNotMatch(source, /createInlineInput\(meeting, "Date", "YYYY-MM-DD", formatDateKey\(new Date\(\)\)\)/);
   assert.doesNotMatch(source, /"2026-W21; review accepts last"/);
   assert.doesNotMatch(source, /"2026-Q2 or 2026-04"/);
 });
