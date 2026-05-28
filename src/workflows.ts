@@ -133,7 +133,7 @@ export function resolveWeeklyPeriodInput(_mode: "init" | "review", value: string
   return "";
 }
 
-export function resolveQuarterlyPeriodInput(mode: "init" | "review" | "pulse", value: string): string {
+export function resolveQuarterlyPeriodInput(mode: "init" | "review" | "pulse", value: string, date = new Date()): string {
   const quarter = value.match(/\b(20\d{2})-Q([1-4])\b/i);
   if (mode !== "pulse" && quarter) {
     return `${mode} ${quarter[1]}-Q${quarter[2]}`;
@@ -146,7 +146,9 @@ export function resolveQuarterlyPeriodInput(mode: "init" | "review" | "pulse", v
 
   const monthOnly = value.match(/^\s*(0?[1-9]|1[0-2])\s*$/);
   if (mode === "pulse" && monthOnly) {
-    return `${mode} ${monthOnly[1].padStart(2, "0")}`;
+    const month = Number(monthOnly[1]);
+    const year = month > date.getMonth() + 1 ? date.getFullYear() - 1 : date.getFullYear();
+    return `${mode} ${year}-${String(month).padStart(2, "0")}`;
   }
 
   return mode;
