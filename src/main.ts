@@ -811,7 +811,7 @@ class OperatorDashboardView extends ItemView {
     });
 
     const strategy = createWorkflowCard(grid, "Strategy review", "Annual vision/review, quarterly plans, monthly pulses, and quarter reviews stay one click away.");
-    const annualYearInput = createInlineInput(strategy, "Year", "YYYY, last, or next");
+    const annualYearInput = createInlineInput(strategy, "Year", "YYYY; vision accepts next; review accepts last");
     const strategyPeriodInput = createInlineInput(strategy, "Period", "2026-Q2 or 2026-04");
     createAgentWorkflowButton(strategy, "compass", "Annual vision", () => {
       const annual = resolveAnnualShortcutInput("vision", annualYearInput.value);

@@ -95,10 +95,10 @@ export function resolveAnnualYearInput(mode: "vision" | "review", value: string,
   if (year) {
     return year;
   }
-  if (/\bnext\b/i.test(value)) {
+  if (mode === "vision" && /\bnext\b/i.test(value)) {
     return String(date.getFullYear() + 1);
   }
-  if (/\blast\b/i.test(value)) {
+  if (mode === "review" && /\blast\b/i.test(value)) {
     return String(date.getFullYear() - 1);
   }
   if (mode === "review") {

@@ -452,10 +452,14 @@ test("builds editable workflow prompt specs", () => {
   assert.equal(resolveAnnualYearInput("review", "", date), "2025");
   assert.equal(resolveAnnualYearInput("review", "", new Date("2026-12-15T09:00:00")), "2026");
   assert.equal(resolveAnnualYearInput("vision", "next year", date), "2027");
+  assert.equal(resolveAnnualYearInput("vision", "last year", date), "2026");
   assert.equal(resolveAnnualYearInput("review", "last year", date), "2025");
+  assert.equal(resolveAnnualYearInput("review", "next year", date), "2025");
   assert.deepEqual(resolveAnnualShortcutInput("vision", "", date), { year: "2026", nextInputValue: "" });
   assert.deepEqual(resolveAnnualShortcutInput("review", "", date), { year: "2025", nextInputValue: "" });
   assert.deepEqual(resolveAnnualShortcutInput("vision", "next", date), { year: "2027", nextInputValue: "" });
+  assert.deepEqual(resolveAnnualShortcutInput("vision", "last", date), { year: "2026", nextInputValue: "" });
+  assert.deepEqual(resolveAnnualShortcutInput("review", "next", date), { year: "2025", nextInputValue: "" });
   assert.deepEqual(resolveAnnualShortcutInput("review", "2024", date), { year: "2024", nextInputValue: "2024" });
   assert.equal(resolveQuarterlyPeriodInput("init", "2026-Q3"), "init 2026-Q3");
   assert.equal(resolveQuarterlyPeriodInput("review", "review 2025-q4"), "review 2025-Q4");
@@ -570,8 +574,8 @@ test("builds editable workflow prompt specs", () => {
   assert.equal(buildWorkflowSpec("annual-vision", "review 2026", date).expectedOpenPath, "00_Strategy/2026 Annual Review.md");
   assert.equal(describePrompt("/annual-vision next", date).expectedOpenPath, "00_Strategy/2027 Vision.md");
   assert.match(describePrompt("/annual-vision next", date).prompt, /^\/annual-vision 2027\n\nOperator run metadata/);
-  assert.equal(describePrompt("/annual-vision review next", date).expectedOpenPath, "00_Strategy/2027 Annual Review.md");
-  assert.match(describePrompt("/annual-vision review next", date).prompt, /^\/annual-vision review 2027\n\nOperator run metadata/);
+  assert.equal(describePrompt("/annual-vision review next", date).expectedOpenPath, "00_Strategy/2025 Annual Review.md");
+  assert.match(describePrompt("/annual-vision review next", date).prompt, /^\/annual-vision review 2025\n\nOperator run metadata/);
   assert.equal(buildWorkflowSpec("quarterly-plan", "init", date).expectedOpenPath, "00_Strategy/2026-Q2/Quarterly Plan.md");
   assert.equal(buildWorkflowSpec("quarterly-plan", "init", date).label, "Quarter plan 2026-Q2");
   assert.deepEqual(buildWorkflowSpec("quarterly-plan", "init", date).writeAreas, ["00_Strategy/2026-Q2/Quarterly Plan.md"]);
