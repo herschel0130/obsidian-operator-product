@@ -312,7 +312,8 @@ test("builds editable workflow prompt specs", () => {
   assert.equal(resolveQuarterlyPeriodInput("pulse", "2026-04"), "pulse 2026-04");
   assert.equal(resolveQuarterlyPeriodInput("pulse", "05", date), "pulse 2026-05");
   assert.equal(resolveQuarterlyPeriodInput("pulse", "12", new Date("2026-01-15T09:00:00")), "pulse 2025-12");
-  assert.equal(resolveQuarterlyPeriodInput("init", "2026-04"), "init");
+  assert.equal(resolveQuarterlyPeriodInput("init", "2026-04"), "init 2026-Q2");
+  assert.equal(resolveQuarterlyPeriodInput("review", "2026-12"), "review 2026-Q4");
   assert.equal(resolveQuarterlyPeriodInput("review", ""), "review");
 
   assert.match(start.prompt, /^\/daily-init 7\n\nOperator run metadata \(do not treat as manual action items\):/);
@@ -410,6 +411,14 @@ test("builds editable workflow prompt specs", () => {
   assert.deepEqual(buildWorkflowSpec("quarterly-plan", "init", date).writeAreas, ["00_Strategy/2026-Q2/Quarterly Plan.md"]);
   assert.deepEqual(buildWorkflowSpec("quarterly-plan", "init", date).targetNotes, ["Quarterly plan target: 2026-Q2"]);
   assert.match(buildWorkflowSpec("quarterly-plan", "init", date).prompt, /^\/quarterly-plan init 2026-Q2\n\nOperator run metadata/);
+  assert.match(
+    buildWorkflowSpec("quarterly-plan", resolveQuarterlyPeriodInput("init", "2026-07", date), date).prompt,
+    /^\/quarterly-plan init 2026-Q3\n\nOperator run metadata/,
+  );
+  assert.match(
+    buildWorkflowSpec("quarterly-plan", resolveQuarterlyPeriodInput("review", "2026-12", date), date).prompt,
+    /^\/quarterly-plan review 2026-Q4\n\nOperator run metadata/,
+  );
   assert.equal(buildWorkflowSpec("quarterly-plan", "pulse", date).expectedOpenPath, "00_Strategy/2026-Q2/Monthly Pulse - 04.md");
   assert.equal(buildWorkflowSpec("quarterly-plan", "pulse", date).label, "Monthly pulse 2026-04");
   assert.deepEqual(buildWorkflowSpec("quarterly-plan", "pulse", date).writeAreas, ["00_Strategy/2026-Q2/Monthly Pulse - 04.md"]);

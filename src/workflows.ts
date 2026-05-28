@@ -143,6 +143,10 @@ export function resolveQuarterlyPeriodInput(mode: "init" | "review" | "pulse", v
   if (mode === "pulse" && month) {
     return `${mode} ${month[1]}-${month[2].padStart(2, "0")}`;
   }
+  if (mode !== "pulse" && month) {
+    const monthQuarter = getQuarterInfo(new Date(Number(month[1]), Number(month[2]) - 1, 1));
+    return `${mode} ${monthQuarter.label}`;
+  }
 
   const monthOnly = value.match(/^\s*(0?[1-9]|1[0-2])\s*$/);
   if (mode === "pulse" && monthOnly) {
