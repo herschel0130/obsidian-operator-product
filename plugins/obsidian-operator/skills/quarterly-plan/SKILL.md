@@ -7,7 +7,7 @@ Strategic quarterly planning: init, review, and monthly pulse checkpoint.
 
 ## Arguments
 
-- `pulse [MM]` — Run monthly pulse for month MM (default: last month). Auto-triggered by `/daily-init` on 1st of each month.
+- `pulse [YYYY-MM|MM]` — Run monthly pulse for the target month (default: last month). Auto-triggered by `/daily-init` on 1st of each month.
 - `init [YYYY-QX]` — Initialize a new quarter's plan. Auto-triggered by `/daily-init` on first Monday of quarter.
 - `review [YYYY-QX]` — Review a completed quarter. Auto-triggered by `/daily-init` on first Monday of new quarter.
 
@@ -19,7 +19,7 @@ If no argument given, auto-detect mode:
 ## Pulse Mode (Monthly Checkpoint)
 
 ### Step 1: Determine context
-Compute current quarter string `YYYY-QX`. Determine which month within the quarter (1st, 2nd, or 3rd). Default month = last month if not specified.
+If the prompt includes `pulse YYYY-MM`, use that exact month and derive its quarter. If it includes `pulse MM`, resolve that month relative to the current year, using the previous year when the month would otherwise be in the future. If no month is specified, default to last month. Compute the target quarter string `YYYY-QX` from the target month.
 
 ### Step 2: Read sources
 - All Weekly Reviews from the target month in `01_Execution/YYYY-WXX/Weekly Review.md` — especially `### Horizon Items` (under `## AI Synthesis`) and `## Reflection` sections (surface reflection themes in qualitative assessment)
@@ -121,7 +121,7 @@ Run `obsidian open path="00_Strategy/YYYY-QX/Monthly Pulse - MM.md"` to open the
 ## Init Mode (Start of Quarter)
 
 ### Step 1: Determine quarter
-Compute current quarter `YYYY-QX`. Create folder `00_Strategy/YYYY-QX/` if it doesn't exist.
+If the prompt includes `init YYYY-QX`, use that exact quarter. Otherwise compute the current quarter `YYYY-QX`. Create folder `00_Strategy/YYYY-QX/` if it doesn't exist.
 
 ### Step 2: Check for existing plan
 If `00_Strategy/YYYY-QX/Quarterly Plan.md` already exists, switch to **update mode**: read the existing plan and use it as the starting point. Steps 3–4 still run to gather fresh context, but Step 5 merges new insights into the existing plan rather than writing from scratch. Preserve existing objectives and structure; add new items, update statuses, and incorporate any new context from sources. Inform the user: "Quarter already has a plan — updating with fresh context."
@@ -218,7 +218,7 @@ Run `obsidian open path="00_Strategy/YYYY-QX/Quarterly Plan.md"` to open the fil
 ## Review Mode (End of Quarter)
 
 ### Step 1: Determine quarter
-Default: last completed quarter. Compute `YYYY-QX`.
+If the prompt includes `review YYYY-QX`, use that exact quarter. Otherwise default to the last completed quarter. Compute `YYYY-QX`.
 
 ### Step 2: Check for existing review
 If `00_Strategy/YYYY-QX/Quarterly Review.md` already exists, switch to **update mode**: read the existing review and use it as the starting point. Steps 3–4 still run to gather fresh data, and Step 5 merges new analysis into the existing review. Preserve existing assessments; enrich with additional context. Inform the user: "Quarter already has a review — updating with fresh context."

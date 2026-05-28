@@ -1,6 +1,6 @@
 {
   "name": "obsidian-operator",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "AI-native personal operating system for Obsidian — 20 skills (19 production + 1 cross-platform reference) for vault setup, daily briefings, arXiv paper scanning, weekly reviews, strategic planning, meeting processing, deadline tracking, deep research, and content engine.",
   "author": {
     "name": "Yuhan Wang",

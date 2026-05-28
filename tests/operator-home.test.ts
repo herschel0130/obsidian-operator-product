@@ -1,4 +1,5 @@
 import { strict as assert } from "node:assert";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { formatDashboardRunContext, formatRunContext, getDailyNotePath, getExecutionWeekFolder, getIsoWeekInfo, getLocalMinuteKey, getQuarterInfo, hasLocalDateChanged, hasLocalMinuteChanged } from "../src/dates";
 import { appendQuickCapture, readOperatorHomeState, updateMarkdownTaskState } from "../src/home-state";
@@ -61,6 +62,14 @@ test("formats run context for agent prompts with local clock and planning period
   assert.match(formatRunContext(date), /ISO week: 2026-W21/);
   assert.match(formatRunContext(date), /Quarter: 2026-Q2/);
   assert.match(formatDashboardRunContext(date), /^2026-05-22 09:15 .+ · 2026-W21 · 2026-Q2$/);
+});
+
+test("quarterly-plan skill documents explicit UI targets", () => {
+  const skill = readFileSync("plugins/obsidian-operator/skills/quarterly-plan/SKILL.md", "utf8");
+
+  assert.match(skill, /Pulse Mode[\s\S]*If the prompt includes `pulse YYYY-MM`/);
+  assert.match(skill, /Init Mode[\s\S]*If the prompt includes `init YYYY-QX`/);
+  assert.match(skill, /Review Mode[\s\S]*If the prompt includes `review YYYY-QX`/);
 });
 
 test("parses active project notes from frontmatter and ## Now", () => {
