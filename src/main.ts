@@ -602,18 +602,25 @@ class OperatorDashboardView extends ItemView {
 
   private renderSetupControls(section: HTMLElement, status: OperatorEnvironmentStatus): void {
     const controls = section.createDiv({ cls: "operator-controls-row" });
+    const setupLockHelp = this.plugin.activeRun
+      ? "Operator is already running. Use Cancel run before changing setup."
+      : undefined;
     if (this.plugin.settings.backend === "codex") {
+      const codexSkillsDisabled = status.codexCli !== "ready" || !!this.plugin.activeRun;
+      const codexSkillsHelp = status.codexCli !== "ready"
+        ? "Set a working Codex executable before installing Codex skills."
+        : setupLockHelp;
       createButton(controls, "download", status.operatorSkills === "ready" || status.operatorSkills === "warning" ? "Update Codex skills" : "Install Codex skills", () => {
         void this.plugin.installOrUpdateCodexMarketplace();
-      }, undefined, status.codexCli !== "ready" || !!this.plugin.activeRun);
+      }, undefined, codexSkillsDisabled, codexSkillsHelp);
     } else {
       createButton(controls, "copy", "Copy Claude install", () => {
         void copyTextToClipboard(CLAUDE_INSTALL_COMMANDS, "Claude install commands copied.");
-      }, undefined, !!this.plugin.activeRun);
+      }, undefined, !!this.plugin.activeRun, setupLockHelp);
     }
     createButton(controls, "folder-check", status.vault.ready ? "Refresh vault setup" : "Initialize vault", () => {
       void this.plugin.initializeVaultFromUi();
-    }, "mod-cta", !!this.plugin.activeRun);
+    }, "mod-cta", !!this.plugin.activeRun, setupLockHelp);
   }
 
   private renderToday(root: HTMLElement, status: OperatorEnvironmentStatus, home: OperatorHomeState): void {

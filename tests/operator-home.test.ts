@@ -448,6 +448,15 @@ test("dashboard open refreshes status without rendering twice", () => {
   assert.doesNotMatch(source, /await this\.refreshStatus\(\);\s*this\.renderViews\(\);/);
 });
 
+test("setup controls explain disabled setup actions", () => {
+  const source = readFileSync("src/main.ts", "utf8");
+
+  assert.match(source, /const setupLockHelp = this\.plugin\.activeRun[\s\S]*Use Cancel run before changing setup\./);
+  assert.match(source, /const codexSkillsHelp = status\.codexCli !== "ready"[\s\S]*Set a working Codex executable before installing Codex skills\./);
+  assert.match(source, /codexSkillsDisabled, codexSkillsHelp/);
+  assert.match(source, /!!this\.plugin\.activeRun, setupLockHelp\)/);
+});
+
 test("does not update ambiguous duplicate markdown task lines", async () => {
   const app = createFakeApp();
   await app.vault.create("01_Execution/2026-W21/Weekly Todo.md", [
