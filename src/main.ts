@@ -711,9 +711,12 @@ class OperatorDashboardView extends ItemView {
       void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("weekly-review"));
     }, undefined, !canRun);
 
-    const strategy = createWorkflowCard(grid, "Strategy review", "Annual vision, quarterly plans, monthly pulses, and quarter reviews stay one click away.");
+    const strategy = createWorkflowCard(grid, "Strategy review", "Annual vision/review, quarterly plans, monthly pulses, and quarter reviews stay one click away.");
     createButton(strategy, "compass", "Annual vision", () => {
       void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("annual-vision"));
+    }, undefined, !canRun);
+    createButton(strategy, "book-open-check", "Annual review", () => {
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("annual-vision", "review"));
     }, undefined, !canRun);
     createButton(strategy, "milestone", "Quarter plan", () => {
       void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("quarterly-plan", "init"));

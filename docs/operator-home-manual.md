@@ -90,7 +90,7 @@ Use **Run /project-init** only when you want the legacy agent-guided project set
 Open **More workflows** for less frequent or reasoning-heavy work:
 
 - **Weekly setup / Weekly review** for execution planning and synthesis.
-- **Annual vision / Quarter plan / Monthly pulse / Quarter review** for the strategic layer from `00_Strategy/`.
+- **Annual vision / Annual review / Quarter plan / Monthly pulse / Quarter review** for the strategic layer from `00_Strategy/`.
 - **Sync / Deadline plan** for project-level agent work.
 - **Prep / Process meeting** for agendas, transcripts, decisions, and actions. Transcript input accepts pasted multi-line text or a local path.
 - **Extract ideas / Draft / Deep research** for content and research workflows.
