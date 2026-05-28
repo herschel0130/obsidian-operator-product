@@ -460,6 +460,7 @@ function getDailyPreviewRunNotes(
   const monthlyBoundaryDay = date.getDate() === 1;
   const quarterlyBoundaryDay = monthlyBoundaryDay && [0, 3, 6, 9].includes(date.getMonth());
   notes.push("Pre-flight may catch up missing prior-period artifacts after a week, month, or quarter boundary has passed.");
+  notes.push(`Pre-flight target checks: /weekly-review ${targets.lastWeek}, /ai-weekly-digest ${targets.lastWeek}, /quarterly-plan pulse ${targets.lastMonth}, /quarterly-plan review ${targets.lastQuarter}, /quarterly-plan init ${targets.currentQuarter}.`);
   if (weeklyBoundaryDay) {
     notes.push(`Pre-flight may close last week: /weekly-review ${targets.lastWeek}, then /ai-weekly-digest ${targets.lastWeek}.`);
   }
