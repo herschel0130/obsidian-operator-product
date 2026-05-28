@@ -492,8 +492,9 @@ class OperatorDashboardView extends ItemView {
     container.empty();
     container.addClass("operator-control-view");
 
+    const renderDate = new Date();
     const status = this.plugin.status ?? (await this.plugin.refreshStatus());
-    const home = await readOperatorHomeState(this.app);
+    const home = await readOperatorHomeState(this.app, renderDate);
 
     const root = container.createDiv({ cls: "operator-control" });
     const header = root.createDiv({ cls: "operator-hero" });
@@ -503,7 +504,7 @@ class OperatorDashboardView extends ItemView {
     const headerMeta = titleWrap.createEl("p", {
       cls: "operator-muted",
       text: status.vault.ready
-        ? `${formatDashboardRunContext(new Date())} · ${home.dailyNotePath}`
+        ? `${formatDashboardRunContext(renderDate)} · ${home.dailyNotePath}`
         : "Initialize the Markdown structure once, then use the vault itself as the interface.",
     });
     if (status.vault.ready) {
@@ -527,7 +528,7 @@ class OperatorDashboardView extends ItemView {
     this.renderToday(root, status, home);
     this.renderQuickCapture(root, home);
     this.renderHomePanels(root, status, home);
-    this.renderWorkflowShortcuts(root, status, home);
+    this.renderWorkflowShortcuts(root, status, home, renderDate);
     this.renderSetup(root, status, true);
     this.renderRunLog(root);
   }
@@ -797,7 +798,7 @@ class OperatorDashboardView extends ItemView {
     }
   }
 
-  private renderWorkflowShortcuts(root: HTMLElement, status: OperatorEnvironmentStatus, home: OperatorHomeState): void {
+  private renderWorkflowShortcuts(root: HTMLElement, status: OperatorEnvironmentStatus, home: OperatorHomeState, date: Date): void {
     const section = createDisclosureSection(root, "More workflows", "Native actions handle fixed structure; agent workflows and CLI-style prompts stay available here.");
     const canRun = this.canRun(status);
     const lockHelp = canRun
@@ -815,7 +816,7 @@ class OperatorDashboardView extends ItemView {
     ) => createButton(parent, icon, label, onClick, extraClass, !canRun, lockHelp);
     const grid = section.createDiv({ cls: "operator-workflow-grid" });
 
-    const now = new Date();
+    const now = date;
     const planWeek = createWorkflowCard(grid, "Plan week", "Open or review the current execution layer.");
     const weekInput = createInlineInput(planWeek, "Week", buildWeeklyPeriodPlaceholder(now));
     createAgentWorkflowButton(planWeek, "calendar-plus", "Weekly setup", () => {

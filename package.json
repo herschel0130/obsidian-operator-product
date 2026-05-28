@@ -1,6 +1,6 @@
 {
   "name": "operator-control",
-  "version": "0.3.103",
+  "version": "0.3.104",
   "description": "Markdown-first Obsidian desktop home for Operator onboarding, native project setup, daily workflows, and agent runs.",
   "main": "main.js",
   "scripts": {
