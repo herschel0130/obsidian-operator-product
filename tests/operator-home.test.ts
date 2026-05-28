@@ -301,7 +301,10 @@ test("builds editable workflow prompt specs", () => {
   assert.match(start.prompt, /Local date: 2026-05-22/);
   assert.match(start.prompt, /Daily pre-flight guard:/);
   assert.match(start.prompt, /Do not rely on CLI hooks being available/);
-  assert.match(start.prompt, /Run missing weekly, monthly, and quarterly boundary workflows before writing today's briefing.*then \/weekly-init 2026-W21/s);
+  assert.match(
+    start.prompt,
+    /Run missing weekly, monthly, and quarterly boundary workflows before writing today's briefing, in the daily-init order: \/weekly-review 2026-W20, \/ai-weekly-digest 2026-W20, \/quarterly-plan pulse 2026-04, \/quarterly-plan review 2026-Q1, \/quarterly-plan init 2026-Q2, then \/weekly-init 2026-W21\./,
+  );
   assert.match(start.prompt, /\/weekly-review 2026-W20/);
   assert.match(start.prompt, /\/ai-weekly-digest 2026-W20/);
   assert.match(start.prompt, /\/quarterly-plan pulse 2026-04/);
