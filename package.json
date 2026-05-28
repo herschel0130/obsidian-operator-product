@@ -1,11 +1,13 @@
 {
   "name": "operator-control",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Markdown-first Obsidian desktop home for Operator onboarding, native project setup, daily workflows, and agent runs.",
   "main": "main.js",
   "scripts": {
     "build": "tsc -noEmit && node esbuild.config.mjs production",
     "dev": "node esbuild.config.mjs",
+    "package:plugin": "npm run build && node scripts/package-obsidian-plugin.mjs",
+    "install:plugin": "npm run build && node scripts/install-obsidian-plugin.mjs",
     "test": "node scripts/run-tests.mjs",
     "check": "npm run test && npm run build"
   },

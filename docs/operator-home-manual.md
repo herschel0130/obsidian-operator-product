@@ -11,27 +11,54 @@ Operator Home is the Obsidian-native front door for Obsidian Operator. It keeps 
 ## Install
 
 1. Install Obsidian desktop.
-2. Install and log in to Codex CLI:
+2. Download `operator-control.zip` from the [latest release](https://github.com/herschel0130/obsidian-operator-product/releases/latest).
+3. Unzip it and move the resulting folder into your vault:
+
+```text
+<your vault>/.obsidian/plugins/
+  operator-control/
+    manifest.json
+    main.js
+    styles.css
+```
+
+4. In Obsidian, enable **Community plugins**, then enable **Operator**.
+
+The zip installs only the Obsidian dashboard. Agent workflows need Codex CLI or Claude Code skills as a separate setup step.
+
+### Codex Backend
+
+Install and log in to Codex CLI:
 
 ```bash
 codex login
 ```
 
-3. Copy the plugin release files into your vault:
+Then open Operator Home and click **Install Codex skills** in **Setup health**. If Setup health says the marketplace is installed but skills are not ready, open Codex and enable `obsidian-operator` from `/plugin`.
+
+### Claude Backend
+
+Install Claude Code, switch Operator's backend setting to **Claude**, then copy the install commands from **Setup health**:
 
 ```text
-<your vault>/.obsidian/plugins/operator-control/
-  manifest.json
-  main.js
-  styles.css
+/plugin marketplace add https://github.com/herschel0130/obsidian-operator-product
+/plugin install obsidian-operator
 ```
 
-4. In Obsidian, enable **Community plugins**, then enable **Operator**.
+### Local Development Install
+
+If you cloned this repo instead of using a release zip:
+
+```bash
+npm install
+npm run build
+npm run install:plugin -- "<your vault>"
+```
 
 ## First Run
 
 1. Open **Operator** from the left ribbon or command palette.
-2. If setup is incomplete, click **Install Operator skills**.
+2. If setup is incomplete, use **Setup health** to install skills for your selected backend.
 3. Click **Initialize vault** to create the Operator folder structure and agent config files.
 4. Click **New** under Active projects, then create your first project note.
 5. Enter available hours and click **Start my day**. Review the Preview, then run it.
@@ -73,7 +100,8 @@ Every agent workflow opens a Preview showing the exact prompt and likely read/wr
 
 ## Troubleshooting
 
-- If buttons are disabled, open **Setup health** and check Codex, login, Operator skills, and vault setup.
+- If buttons are disabled, open **Setup health**. Codex mode checks vault setup, Codex CLI, Codex login, and Codex Operator skills. Claude mode checks vault setup, Claude CLI, and Claude Operator skills.
+- If `codex --version` works in Terminal but Operator says Codex is missing, refresh the dashboard. Operator searches common Homebrew and nvm locations and runs absolute command paths with the command's own folder added to `PATH`.
 - Gmail, Gemini, Calendar, and multi-agent support are optional. Missing optional integrations should not block basic daily workflows.
 - If an agent run fails, open **Last Run -> Raw log** and rerun after fixing the setup issue.
 - For open-ended debugging or multi-turn work, use Codex CLI or Claude Code directly from the vault.

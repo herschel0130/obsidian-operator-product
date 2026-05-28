@@ -11,6 +11,7 @@ Thumbs.db
 node_modules/
 main.js
 main.js.map
+dist/
 .test-out/
 
 # Environment / secrets
