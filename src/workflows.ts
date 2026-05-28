@@ -91,9 +91,9 @@ export function resolveAvailableHoursInput(value: string, fallbackHours: number)
 }
 
 export function resolveAnnualYearInput(value: string, date = new Date()): string {
-  const trimmed = value.trim();
-  if (/^20\d{2}$/.test(trimmed)) {
-    return trimmed;
+  const year = value.match(/\b(20\d{2})\b/)?.[1];
+  if (year) {
+    return year;
   }
   return String(date.getFullYear());
 }

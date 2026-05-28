@@ -265,6 +265,8 @@ test("builds editable workflow prompt specs", () => {
   assert.equal(resolveAvailableHoursInput("0", 7), 7);
   assert.equal(resolveAvailableHoursInput("abc", 7), 7);
   assert.equal(resolveAnnualYearInput("2025", date), "2025");
+  assert.equal(resolveAnnualYearInput("review 2025", date), "2025");
+  assert.equal(resolveAnnualYearInput("2027 planning", date), "2027");
   assert.equal(resolveAnnualYearInput("", date), "2026");
   assert.equal(resolveAnnualYearInput("next year", date), "2026");
 
