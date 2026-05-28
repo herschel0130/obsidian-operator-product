@@ -1166,8 +1166,9 @@ class RunPreviewModal extends Modal {
 
     const columns = contentEl.createDiv({ cls: "operator-preview-grid" });
     const runNotes = contentEl.createDiv();
+    const getResolvedPreview = () => resolveEditedPreviewSpec(this.spec, promptInput.value);
     const renderResolvedPreview = () => {
-      const resolved = resolveEditedPreviewSpec(this.spec, promptInput.value);
+      const resolved = getResolvedPreview();
       title.setText(`Preview: ${resolved.label}`);
       expectedNote.setText(resolved.expectedOpenPath ? `Expected note: ${resolved.expectedOpenPath}` : "Expected note: not predicted");
       columns.empty();
@@ -1190,10 +1191,10 @@ class RunPreviewModal extends Modal {
       this.close();
     });
     createButton(row, "copy", "Copy prompt", () => {
-      void copyTextToClipboard(promptInput.value, "Prompt copied.");
+      void copyTextToClipboard(getResolvedPreview().prompt, "Prompt copied.");
     });
     createButton(row, "play", "Run", () => {
-      this.resolve(resolveEditedPreviewSpec(this.spec, promptInput.value));
+      this.resolve(getResolvedPreview());
       this.close();
     }, "mod-cta");
   }

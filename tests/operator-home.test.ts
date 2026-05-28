@@ -429,6 +429,15 @@ test("current work agent shortcuts use workflow disabled state", () => {
   assert.match(source, /"Prep"[\s\S]*!canRun, lockHelp/);
 });
 
+test("preview copy uses the same resolved prompt as run", () => {
+  const source = readFileSync("src/main.ts", "utf8");
+
+  assert.match(source, /const getResolvedPreview = \(\) => resolveEditedPreviewSpec\(this\.spec, promptInput\.value\)/);
+  assert.match(source, /copyTextToClipboard\(getResolvedPreview\(\)\.prompt, "Prompt copied\."\)/);
+  assert.match(source, /this\.resolve\(getResolvedPreview\(\)\)/);
+  assert.doesNotMatch(source, /copyTextToClipboard\(promptInput\.value, "Prompt copied\."\)/);
+});
+
 test("does not update ambiguous duplicate markdown task lines", async () => {
   const app = createFakeApp();
   await app.vault.create("01_Execution/2026-W21/Weekly Todo.md", [
