@@ -253,6 +253,14 @@ export function describePrompt(prompt: string, date = new Date()): OperatorWorkf
   };
 }
 
+export function resolveEditedPreviewSpec(
+  _original: OperatorWorkflowRunSpec,
+  editedPrompt: string,
+  date = new Date(),
+): OperatorWorkflowRunSpec {
+  return describePrompt(editedPrompt, date);
+}
+
 function simpleSpec(
   id: OperatorWorkflowId,
   label: string,

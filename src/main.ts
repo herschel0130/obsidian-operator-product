@@ -47,6 +47,7 @@ import {
   resolveAdvancedPrompt,
   resolveAnnualYearInput,
   resolveAvailableHoursInput,
+  resolveEditedPreviewSpec,
   type OperatorWorkflowRunSpec,
 } from "./workflows";
 
@@ -1082,11 +1083,7 @@ class RunPreviewModal extends Modal {
       void copyTextToClipboard(promptInput.value, "Prompt copied.");
     });
     createButton(row, "play", "Run", () => {
-      const edited = describePrompt(promptInput.value);
-      this.resolve({
-        ...edited,
-        label: edited.id === this.spec.id ? this.spec.label : edited.label,
-      });
+      this.resolve(resolveEditedPreviewSpec(this.spec, promptInput.value));
       this.close();
     }, "mod-cta");
   }

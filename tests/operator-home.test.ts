@@ -5,7 +5,7 @@ import { appendQuickCapture, readOperatorHomeState, updateMarkdownTaskState } fr
 import { buildCliHandoff } from "../src/cli-handoff";
 import { buildProjectNote, createNativeProject, normalizeProjectName } from "../src/projects";
 import { parseActiveProjectNote, parseBlockers, parseDailyNote, parseWeeklyTodo } from "../src/vault-parsers";
-import { buildAdvancedPromptPlaceholder, buildDefaultDailyPrompt, buildStartDaySpec, buildWorkflowSpec, describePrompt, resolveAdvancedPrompt, resolveAnnualYearInput, resolveAvailableHoursInput } from "../src/workflows";
+import { buildAdvancedPromptPlaceholder, buildDefaultDailyPrompt, buildStartDaySpec, buildWorkflowSpec, describePrompt, resolveAdvancedPrompt, resolveAnnualYearInput, resolveAvailableHoursInput, resolveEditedPreviewSpec } from "../src/workflows";
 
 test("computes ISO week folders and daily note paths", () => {
   const date = new Date("2026-01-01T12:00:00");
@@ -365,6 +365,10 @@ test("builds editable workflow prompt specs", () => {
 
   const typedWeeklyReview = describePrompt("/weekly-review", date);
   assert.match(typedWeeklyReview.prompt, /^\/weekly-review\n\nOperator run metadata/);
+
+  const editedWeeklyReview = resolveEditedPreviewSpec(buildWorkflowSpec("weekly-review", "", date), "/weekly-review 2026-W18", date);
+  assert.equal(editedWeeklyReview.label, "Review 2026-W18");
+  assert.equal(editedWeeklyReview.expectedOpenPath, "01_Execution/2026-W18/Weekly Review.md");
 
   const described = describePrompt("/deep-research AI evals", date);
   assert.equal(described.id, "deep-research");
