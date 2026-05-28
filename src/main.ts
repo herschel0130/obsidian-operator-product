@@ -575,7 +575,7 @@ class OperatorDashboardView extends ItemView {
 
   private renderSetup(root: HTMLElement, status: OperatorEnvironmentStatus, collapsed: boolean): void {
     const section = collapsed
-      ? createDisclosureSection(root, "Setup health", "Keep agent prerequisites visible without making setup the product.")
+      ? createDisclosureSection(root, "Setup health", "Selected backend readiness first; optional integrations are labeled optional.")
       : createSection(root, "Setup", "Make the hidden agent pieces visible before you run anything.");
     const grid = section.createDiv({ cls: "operator-status-grid" });
 
