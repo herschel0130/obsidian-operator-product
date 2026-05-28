@@ -141,6 +141,16 @@ test("workflow previews name exact daily and weekly write targets", () => {
   ]);
 });
 
+test("advanced weekly prompts run with explicit resolved targets", () => {
+  const date = new Date("2026-05-28T09:00:00");
+
+  assert.match(describePrompt("/weekly-init", date).prompt, /^\/weekly-init 2026-W22\n\nOperator run metadata/);
+  assert.match(describePrompt("/weekly-review", date).prompt, /^\/weekly-review 2026-W22\n\nOperator run metadata/);
+  assert.match(describePrompt("/weekly-review last", date).prompt, /^\/weekly-review 2026-W21\n\nOperator run metadata/);
+  assert.match(describePrompt("/ai-weekly-digest", date).prompt, /^\/ai-weekly-digest 2026-W22\n\nOperator run metadata/);
+  assert.match(describePrompt("/ai-weekly-digest last", date).prompt, /^\/ai-weekly-digest 2026-W21\n\nOperator run metadata/);
+});
+
 test("strategy workflow previews label exact write targets", () => {
   const date = new Date("2026-05-22T09:00:00");
 
@@ -761,7 +771,7 @@ test("builds editable workflow prompt specs", () => {
   assert.match(describePrompt("/annual-vision review", date).prompt, /^\/annual-vision review 2025\n\nOperator run metadata/);
   assert.match(buildWorkflowSpec("quarterly-plan", "pulse 05", date).prompt, /^\/quarterly-plan pulse 05\n\nOperator run metadata/);
   assert.match(describePrompt("/quarterly-plan init", date).prompt, /^\/quarterly-plan init 2026-Q2\n\nOperator run metadata/);
-  assert.match(describePrompt("/weekly-review", date).prompt, /^\/weekly-review\n\nOperator run metadata/);
+  assert.match(describePrompt("/weekly-review", date).prompt, /^\/weekly-review 2026-W21\n\nOperator run metadata/);
   assert.match(buildWorkflowSpec("ai-weekly-digest", "last", date).prompt, /^\/ai-weekly-digest 2026-W20\n\nOperator run metadata/);
   assert.equal(buildWorkflowSpec("ai-weekly-digest", "", date).expectedOpenPath, "04_Knowledge/AI-Weekly/2026-W21 - AI Weekly Digest.md");
   assert.equal(buildWorkflowSpec("ai-weekly-digest", "", date).label, "AI weekly 2026-W21");
@@ -783,8 +793,8 @@ test("builds editable workflow prompt specs", () => {
   assert.equal(buildWorkflowSpec("ai-weekly-digest", "", new Date("2026-05-25T09:00:00")).expectedOpenPath, "04_Knowledge/AI-Weekly/2026-W21 - AI Weekly Digest.md");
   assert.equal(buildWorkflowSpec("ai-weekly-digest", "", new Date("2026-05-25T09:00:00")).label, "AI weekly 2026-W21");
   assert.match(buildWorkflowSpec("ai-weekly-digest", "", new Date("2026-05-25T09:00:00")).prompt, /^\/ai-weekly-digest 2026-W21\n\nOperator run metadata/);
-  assert.match(describePrompt("/ai-weekly-digest", date).prompt, /^\/ai-weekly-digest\n\nOperator run metadata/);
-  assert.match(describePrompt("/ai-weekly-digest last", date).prompt, /^\/ai-weekly-digest last\n\nOperator run metadata/);
+  assert.match(describePrompt("/ai-weekly-digest", date).prompt, /^\/ai-weekly-digest 2026-W21\n\nOperator run metadata/);
+  assert.match(describePrompt("/ai-weekly-digest last", date).prompt, /^\/ai-weekly-digest 2026-W20\n\nOperator run metadata/);
   assert.equal(describePrompt("/ai-weekly-digest last", date).expectedOpenPath, "04_Knowledge/AI-Weekly/2026-W20 - AI Weekly Digest.md");
 
   const eventList = "Fri 2pm Design review\nSat 10am Research sync";
@@ -816,7 +826,7 @@ test("builds editable workflow prompt specs", () => {
   assert.match(typedEvents.prompt, /^\/add-events\nFri 2pm Design review\nSat 10am Research sync\n\nOperator run metadata/);
 
   const typedWeeklyReview = describePrompt("/weekly-review", date);
-  assert.match(typedWeeklyReview.prompt, /^\/weekly-review\n\nOperator run metadata/);
+  assert.match(typedWeeklyReview.prompt, /^\/weekly-review 2026-W21\n\nOperator run metadata/);
   assert.equal(describePrompt("/weekly-init 2026-W18", date).expectedOpenPath, "01_Execution/2026-W18/Weekly Todo.md");
   assert.match(describePrompt("/weekly-init 2026-W3", date).prompt, /^\/weekly-init 2026-W03\n\nOperator run metadata/);
 

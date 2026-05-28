@@ -569,25 +569,19 @@ function getAiWeeklyDigestPromptArgs(args: string, target: string): string {
 
 function normalizeKnownPromptForRun(command: OperatorWorkflowId, prompt: string, commandArgs: string, date: Date): string {
   if (command === "weekly-review") {
-    if (!commandArgs.trim() || isBareLastShorthand(commandArgs)) {
-      return prompt;
-    }
     const reviewFolder = getWeeklyReviewFolder(commandArgs, date);
     const normalizedArgs = getWeeklyReviewPromptArgs(commandArgs, reviewFolder);
     return normalizedArgs === commandArgs ? prompt : withArgs(`/${command}`, normalizedArgs);
   }
 
   if (command === "ai-weekly-digest") {
-    if (!commandArgs.trim() || isBareLastShorthand(commandArgs)) {
-      return prompt;
-    }
     const target = getAiWeeklyDigestTarget(commandArgs, date);
     const normalizedArgs = getAiWeeklyDigestPromptArgs(commandArgs, target);
     return normalizedArgs === commandArgs ? prompt : withArgs(`/${command}`, normalizedArgs);
   }
 
   if (command === "weekly-init") {
-    const normalizedArgs = normalizeIsoWeekReferences(commandArgs);
+    const normalizedArgs = getWeeklyInitPromptArgs(commandArgs, date);
     return normalizedArgs === commandArgs ? prompt : withArgs(`/${command}`, normalizedArgs);
   }
 
@@ -614,8 +608,15 @@ function isLastWeekShorthand(value: string): boolean {
   return /^\s*last(?:\s+week)?\s*$/i.test(value);
 }
 
-function isBareLastShorthand(value: string): boolean {
-  return /^\s*last\s*$/i.test(value);
+function getWeeklyInitPromptArgs(args: string, date: Date): string {
+  const explicit = parseExplicitIsoWeek(args);
+  if (explicit) {
+    return explicit;
+  }
+  if (!args.trim()) {
+    return getIsoWeekInfo(date).label;
+  }
+  return normalizeIsoWeekReferences(args);
 }
 
 function normalizeAnnualTargetArgs(args: string, date: Date): string {
