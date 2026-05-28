@@ -4,7 +4,7 @@ import { formatRunContext, getDailyNotePath, getExecutionWeekFolder, getIsoWeekI
 import { appendQuickCapture, readOperatorHomeState, updateMarkdownTaskState } from "../src/home-state";
 import { buildCliHandoff } from "../src/cli-handoff";
 import { buildProjectNote, createNativeProject, normalizeProjectName } from "../src/projects";
-import { formatRunCompletionNotice } from "../src/run-notices";
+import { formatExpectedNoteStatus, formatRunCompletionNotice } from "../src/run-notices";
 import { parseActiveProjectNote, parseBlockers, parseDailyNote, parseWeeklyTodo } from "../src/vault-parsers";
 import { buildAdvancedPromptPlaceholder, buildDefaultDailyPrompt, buildStartDaySpec, buildWorkflowSpec, describePrompt, resolveAdvancedPrompt, resolveAnnualYearInput, resolveAvailableHoursInput, resolveEditedPreviewSpec } from "../src/workflows";
 
@@ -32,6 +32,14 @@ test("formats run completion notices with expected-note status", () => {
     "Operator run finished. Expected note not found yet: 01_Execution/2026-W21/2026-05-22.md.",
   );
   assert.equal(formatRunCompletionNotice("failed"), "Operator run failed.");
+  assert.equal(
+    formatExpectedNoteStatus("01_Execution/2026-W21/2026-05-22.md", false),
+    "Expected note missing: 01_Execution/2026-W21/2026-05-22.md",
+  );
+  assert.equal(
+    formatExpectedNoteStatus("01_Execution/2026-W21/2026-05-22.md", true),
+    "Expected note ready: 01_Execution/2026-W21/2026-05-22.md",
+  );
 });
 
 test("formats run context for agent prompts with local clock and planning period", () => {

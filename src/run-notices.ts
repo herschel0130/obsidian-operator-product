@@ -1,5 +1,9 @@
 import type { OperatorRunRecord } from "./settings";
 
+export function formatExpectedNoteStatus(expectedOpenPath: string, exists: boolean): string {
+  return `${exists ? "Expected note ready" : "Expected note missing"}: ${expectedOpenPath}`;
+}
+
 export function formatRunCompletionNotice(
   status: OperatorRunRecord["status"],
   expectedOpenPath?: string,

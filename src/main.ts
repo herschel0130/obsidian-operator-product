@@ -27,7 +27,7 @@ import {
   truncateOutput,
   type RunningProcess,
 } from "./runner";
-import { formatRunCompletionNotice } from "./run-notices";
+import { formatExpectedNoteStatus, formatRunCompletionNotice } from "./run-notices";
 import { DEFAULT_SETTINGS, type OperatorRunRecord, type OperatorSettings } from "./settings";
 import {
   canRunBackendWorkflows,
@@ -890,9 +890,12 @@ class OperatorDashboardView extends ItemView {
       meta.createSpan({ text: `Ended: ${new Date(lastRun.endedAt).toLocaleString()}` });
     }
     if (lastRun.expectedOpenPath) {
+      const expectedFile = this.app.vault.getAbstractFileByPath(lastRun.expectedOpenPath);
+      const expectedExists = expectedFile instanceof TFile;
+      meta.createSpan({ text: formatExpectedNoteStatus(lastRun.expectedOpenPath, expectedExists) });
       createButton(meta, "file-text", "Open expected note", () => {
         void this.plugin.openVaultPath(lastRun.expectedOpenPath ?? "");
-      });
+      }, undefined, !expectedExists);
     }
 
     const prompt = section.createEl("code", { cls: "operator-run-prompt", text: lastRun.prompt });
