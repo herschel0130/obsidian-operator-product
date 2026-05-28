@@ -65,12 +65,7 @@ export function buildStartDaySpec(hours: number, manualItems: string, date = new
       `Execution week: ${getIsoWeekInfo(date).label}`,
       `Planning quarter: ${getQuarterInfo(date).label}`,
     ],
-    runNotes: [
-      `Pre-flight may close last week: /weekly-review ${boundaryTargets.lastWeek}, then /ai-weekly-digest ${boundaryTargets.lastWeek}.`,
-      `Pre-flight may close last month: /quarterly-plan pulse ${boundaryTargets.lastMonth}.`,
-      `Pre-flight may close/open quarter boundaries: /quarterly-plan review ${boundaryTargets.lastQuarter}, then /quarterly-plan init ${boundaryTargets.currentQuarter}.`,
-      "Always opens this week with /weekly-init before writing today's briefing.",
-    ],
+    runNotes: getDailyPreviewRunNotes(date, boundaryTargets),
     search: true,
   };
 }
@@ -373,6 +368,29 @@ function getDailyBoundaryTargets(date: Date): {
     lastQuarter: getPreviousQuarter(date).label,
     currentQuarter: getQuarterInfo(date).label,
   };
+}
+
+function getDailyPreviewRunNotes(
+  date: Date,
+  targets: {
+    lastWeek: string;
+    lastMonth: string;
+    lastQuarter: string;
+    currentQuarter: string;
+  },
+): string[] {
+  const notes: string[] = [];
+  if (date.getDay() === 1) {
+    notes.push(`Pre-flight may close last week: /weekly-review ${targets.lastWeek}, then /ai-weekly-digest ${targets.lastWeek}.`);
+  }
+  if (date.getDate() === 1) {
+    notes.push(`Pre-flight may close last month: /quarterly-plan pulse ${targets.lastMonth}.`);
+  }
+  if (date.getDate() === 1 && [0, 3, 6, 9].includes(date.getMonth())) {
+    notes.push(`Pre-flight may close/open quarter boundaries: /quarterly-plan review ${targets.lastQuarter}, then /quarterly-plan init ${targets.currentQuarter}.`);
+  }
+  notes.push("Always opens this week with /weekly-init before writing today's briefing.");
+  return notes;
 }
 
 function getWeeklyReviewFolder(args: string, date: Date): string {

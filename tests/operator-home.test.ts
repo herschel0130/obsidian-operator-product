@@ -289,9 +289,12 @@ test("builds editable workflow prompt specs", () => {
   ]);
   assert.equal(start.search, true);
   assert.deepEqual(start.runNotes, [
-    "Pre-flight may close last week: /weekly-review 2026-W20, then /ai-weekly-digest 2026-W20.",
-    "Pre-flight may close last month: /quarterly-plan pulse 2026-04.",
-    "Pre-flight may close/open quarter boundaries: /quarterly-plan review 2026-Q1, then /quarterly-plan init 2026-Q2.",
+    "Always opens this week with /weekly-init before writing today's briefing.",
+  ]);
+
+  const mondayStart = buildStartDaySpec(6, "", new Date("2026-05-25T09:00:00"));
+  assert.deepEqual(mondayStart.runNotes, [
+    "Pre-flight may close last week: /weekly-review 2026-W21, then /ai-weekly-digest 2026-W21.",
     "Always opens this week with /weekly-init before writing today's briefing.",
   ]);
 
@@ -301,6 +304,11 @@ test("builds editable workflow prompt specs", () => {
   assert.match(newYearDay.prompt, /\/quarterly-plan pulse 2025-12/);
   assert.match(newYearDay.prompt, /\/quarterly-plan review 2025-Q4/);
   assert.match(newYearDay.prompt, /\/quarterly-plan init 2026-Q1/);
+  assert.deepEqual(newYearDay.runNotes, [
+    "Pre-flight may close last month: /quarterly-plan pulse 2025-12.",
+    "Pre-flight may close/open quarter boundaries: /quarterly-plan review 2025-Q4, then /quarterly-plan init 2026-Q1.",
+    "Always opens this week with /weekly-init before writing today's briefing.",
+  ]);
 
   const fractionalDay = buildStartDaySpec(4.5, "", date);
   assert.match(fractionalDay.prompt, /^\/daily-init 4\.5\n\nOperator run metadata/);
@@ -396,7 +404,10 @@ test("builds editable workflow prompt specs", () => {
   const typedDaily = describePrompt("/daily-init 4.5", date);
   assert.match(typedDaily.prompt, /^\/daily-init 4\.5\n\nOperator run metadata/);
   assert.match(typedDaily.prompt, /Daily pre-flight guard:/);
-  assert.ok(typedDaily.runNotes?.some((note) => note.includes("/weekly-review")));
+  assert.match(typedDaily.prompt, /\/weekly-review 2026-W20/);
+  assert.deepEqual(typedDaily.runNotes, [
+    "Always opens this week with /weekly-init before writing today's briefing.",
+  ]);
 
   const delayedDaily = describePrompt(typedDaily.prompt, new Date("2026-05-23T00:15:00"));
   assert.match(delayedDaily.prompt, /Local date: 2026-05-22/);
