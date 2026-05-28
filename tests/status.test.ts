@@ -4,6 +4,7 @@ import {
   canRunBackendWorkflows,
   formatWorkflowLockHelp,
   getBackendReadiness,
+  getFreshBackendReadinessForRun,
   type OperatorEnvironmentStatus,
 } from "../src/status";
 
@@ -58,6 +59,25 @@ test("workflow lock help is backend-specific", () => {
 
   assert.match(codexHelp, /Start my day needs setup first/);
   assert.match(codexHelp, /Codex login/);
+});
+
+test("workflow run readiness always uses freshly refreshed status", async () => {
+  let refreshes = 0;
+  const staleStatus = createStatus({
+    codexLogin: "missing",
+  });
+  const freshStatus = createStatus({
+    codexLogin: "ready",
+  });
+
+  const result = await getFreshBackendReadinessForRun(async () => {
+    refreshes += 1;
+    return freshStatus;
+  }, "codex", staleStatus);
+
+  assert.equal(refreshes, 1);
+  assert.equal(result.status, freshStatus);
+  assert.equal(result.readiness.ready, true);
 });
 
 function createStatus(overrides: Partial<OperatorEnvironmentStatus>): OperatorEnvironmentStatus {

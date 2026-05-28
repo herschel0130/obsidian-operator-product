@@ -109,6 +109,18 @@ export interface BackendReadiness {
   helpText: string;
 }
 
+export async function getFreshBackendReadinessForRun(
+  refreshStatus: () => Promise<OperatorEnvironmentStatus>,
+  backend: OperatorBackend,
+  _cachedStatus?: OperatorEnvironmentStatus | null,
+): Promise<{ status: OperatorEnvironmentStatus; readiness: BackendReadiness }> {
+  const status = await refreshStatus();
+  return {
+    status,
+    readiness: getBackendReadiness(status, backend),
+  };
+}
+
 export function getBackendReadiness(status: OperatorEnvironmentStatus, backend: OperatorBackend): BackendReadiness {
   const blockers: string[] = [];
   if (!status.vault.ready) {

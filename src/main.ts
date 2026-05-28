@@ -34,6 +34,7 @@ import {
   checkEnvironment,
   formatWorkflowLockHelp,
   getBackendReadiness,
+  getFreshBackendReadinessForRun,
   type OperatorEnvironmentStatus,
   type StatusState,
 } from "./status";
@@ -263,8 +264,11 @@ export default class OperatorControlPlugin extends Plugin {
       return;
     }
 
-    const status = this.status ?? (await this.refreshStatus());
-    const readiness = getBackendReadiness(status, this.settings.backend);
+    const { status, readiness } = await getFreshBackendReadinessForRun(
+      () => this.refreshStatus(),
+      this.settings.backend,
+      this.status,
+    );
     if (!readiness.ready) {
       new Notice(`Finish setup first: ${readiness.helpText}`);
       return;
