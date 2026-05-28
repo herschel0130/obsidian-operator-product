@@ -272,6 +272,8 @@ test("builds editable workflow prompt specs", () => {
 
   const typedDaily = describePrompt("/daily-init 4.5", date);
   assert.match(typedDaily.prompt, /^\/daily-init 4\.5\n\nOperator run metadata/);
+  assert.match(typedDaily.prompt, /Daily pre-flight guard:/);
+  assert.ok(typedDaily.runNotes?.some((note) => note.includes("/weekly-review")));
 
   const typedEvents = describePrompt(`/add-events\n${eventList}`, date);
   assert.match(typedEvents.prompt, /^\/add-events\nFri 2pm Design review\nSat 10am Research sync\n\nOperator run metadata/);

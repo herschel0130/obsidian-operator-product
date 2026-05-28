@@ -101,6 +101,8 @@ Open **More workflows** for less frequent or reasoning-heavy work:
 
 Every agent workflow opens a Preview showing the exact prompt and likely read/write areas before launching Codex or Claude. Built-in workflows include local date, time, timezone, ISO week, and quarter as metadata, not manual tasks, so daily scheduling, weekly planning, annual vision, quarterly planning, and research runs do not depend on hidden agent clock assumptions. **Start my day** also shows the original boundary cascade before launch and includes a prompt-level pre-flight guard, so Obsidian-launched runs do not depend solely on interactive CLI hooks for weekly review/setup, AI weekly digest, monthly pulse, and quarterly plan/review.
 
+The same daily pre-flight guard is added when you type `/daily-init ...` in **Agent prompt / CLI command** and run it from the Preview.
+
 For daily, weekly, annual, and quarterly workflows, Operator also predicts the main output note. After a successful run, it opens that note when present; **Last Run** keeps an **Open expected note** button for quick review. Monthly pulse paths are based on the target month, so January and quarter-boundary runs still open the previous year's Q4 pulse when appropriate.
 
 ## Troubleshooting

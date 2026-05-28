@@ -162,7 +162,7 @@ export function describePrompt(prompt: string, date = new Date()): OperatorWorkf
   if (trimmed.startsWith("/daily-init")) {
     return {
       ...buildStartDaySpec(extractDailyHours(trimmed), "", date),
-      prompt: appendRunMetadata(trimmed, date),
+      prompt: appendDailyPreflightGuard(appendRunMetadata(trimmed, date)),
     };
   }
 
@@ -251,6 +251,13 @@ function appendRunMetadata(prompt: string, date: Date): string {
     return prompt;
   }
   return `${prompt}\n\nOperator run metadata (do not treat as manual action items):\n${formatRunContext(date)}`;
+}
+
+function appendDailyPreflightGuard(prompt: string): string {
+  if (prompt.includes("Daily pre-flight guard:")) {
+    return prompt;
+  }
+  return `${prompt}\n\n${formatDailyPreflightGuard()}`;
 }
 
 function formatDailyPreflightGuard(): string {
