@@ -299,9 +299,10 @@ export function describePrompt(prompt: string, date = new Date()): OperatorWorkf
 
   if (known.has(command)) {
     const commandArgs = stripRunMetadata(trimmed.slice(command.length + 1).trim());
+    const runnablePrompt = normalizeKnownPromptForRun(command, trimmed, commandArgs);
     return {
       ...buildWorkflowSpec(command, commandArgs, effectiveDate),
-      prompt: appendRunMetadata(trimmed, effectiveDate),
+      prompt: appendRunMetadata(runnablePrompt, effectiveDate),
     };
   }
 
@@ -513,6 +514,21 @@ function getAiWeeklyDigestPromptArgs(args: string, target: string): string {
     return target;
   }
   return args;
+}
+
+function normalizeKnownPromptForRun(command: OperatorWorkflowId, prompt: string, commandArgs: string): string {
+  if (!["weekly-init", "weekly-review", "ai-weekly-digest"].includes(command)) {
+    return prompt;
+  }
+
+  const normalizedArgs = normalizeIsoWeekReferences(commandArgs);
+  return normalizedArgs === commandArgs ? prompt : withArgs(`/${command}`, normalizedArgs);
+}
+
+function normalizeIsoWeekReferences(value: string): string {
+  return value.replace(/\b(20\d{2})-W(0?[1-9]|[1-4]\d|5[0-3])\b/gi, (_match, year: string, week: string) => {
+    return `${year}-W${week.padStart(2, "0")}`;
+  });
 }
 
 function parseExplicitIsoWeek(value: string): string | null {
