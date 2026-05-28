@@ -175,10 +175,11 @@ export function buildWorkflowSpec(
 
 export function describePrompt(prompt: string, date = new Date()): OperatorWorkflowRunSpec {
   const trimmed = prompt.trim();
+  const effectiveDate = extractRunMetadataDate(trimmed) ?? date;
   if (trimmed.startsWith("/daily-init")) {
     return {
-      ...buildStartDaySpec(extractDailyHours(trimmed), "", date),
-      prompt: appendDailyPreflightGuard(appendRunMetadata(trimmed, date)),
+      ...buildStartDaySpec(extractDailyHours(trimmed), "", effectiveDate),
+      prompt: appendDailyPreflightGuard(appendRunMetadata(trimmed, effectiveDate)),
     };
   }
 
@@ -204,8 +205,8 @@ export function describePrompt(prompt: string, date = new Date()): OperatorWorkf
 
   if (known.has(command)) {
     return {
-      ...buildWorkflowSpec(command, trimmed.slice(command.length + 1).trim(), date),
-      prompt: appendRunMetadata(trimmed, date),
+      ...buildWorkflowSpec(command, trimmed.slice(command.length + 1).trim(), effectiveDate),
+      prompt: appendRunMetadata(trimmed, effectiveDate),
     };
   }
 
@@ -268,6 +269,15 @@ function appendRunMetadata(prompt: string, date: Date): string {
     return prompt;
   }
   return `${prompt}\n\nOperator run metadata (do not treat as manual action items):\n${formatRunContext(date)}`;
+}
+
+function extractRunMetadataDate(prompt: string): Date | null {
+  const match = prompt.match(/^Local date:\s*(\d{4})-(\d{2})-(\d{2})$/m);
+  if (!match) {
+    return null;
+  }
+
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12);
 }
 
 function appendDailyPreflightGuard(prompt: string): string {

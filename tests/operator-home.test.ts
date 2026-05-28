@@ -292,6 +292,15 @@ test("builds editable workflow prompt specs", () => {
   assert.match(typedDaily.prompt, /Daily pre-flight guard:/);
   assert.ok(typedDaily.runNotes?.some((note) => note.includes("/weekly-review")));
 
+  const delayedDaily = describePrompt(typedDaily.prompt, new Date("2026-05-23T00:15:00"));
+  assert.match(delayedDaily.prompt, /Local date: 2026-05-22/);
+  assert.equal(delayedDaily.expectedOpenPath, "01_Execution/2026-W21/2026-05-22.md");
+  assert.deepEqual(delayedDaily.targetNotes, [
+    "Daily note: 01_Execution/2026-W21/2026-05-22.md",
+    "Execution week: 2026-W21",
+    "Planning quarter: 2026-Q2",
+  ]);
+
   const typedEvents = describePrompt(`/add-events\n${eventList}`, date);
   assert.match(typedEvents.prompt, /^\/add-events\nFri 2pm Design review\nSat 10am Research sync\n\nOperator run metadata/);
 
