@@ -15,6 +15,7 @@ import {
   WorkspaceLeaf,
   setIcon,
 } from "obsidian";
+import { clearInputAfterSuccessfulCapture } from "./capture-ui";
 import { startAlignedMinuteRefresh } from "./clock-refresh";
 import { formatDashboardRunContext, formatDateKey, getLocalMinuteKey, hasLocalDateChanged, hasLocalMinuteChanged } from "./dates";
 import { buildCliHandoff } from "./cli-handoff";
@@ -330,13 +331,15 @@ export default class OperatorControlPlugin extends Plugin {
     await this.refreshStatus();
   }
 
-  async appendCapture(kind: "idea" | "task" | "meeting" | "research", text: string): Promise<void> {
+  async appendCapture(kind: "idea" | "task" | "meeting" | "research", text: string): Promise<boolean> {
     try {
       const path = await appendQuickCapture(this.app, kind, text);
       new Notice(`Captured to ${path}.`);
       this.renderViews();
+      return true;
     } catch (error) {
       new Notice(`Capture failed: ${formatError(error)}`);
+      return false;
     }
   }
 
@@ -944,8 +947,9 @@ class OperatorDashboardView extends ItemView {
       attr: { rows: "2", placeholder: "Something worth keeping..." },
     });
     createButton(row, "plus", "Capture", () => {
-      void this.plugin.appendCapture(select.value as "idea" | "task" | "meeting" | "research", input.value);
-      input.value = "";
+      void clearInputAfterSuccessfulCapture(input, () => {
+        return this.plugin.appendCapture(select.value as "idea" | "task" | "meeting" | "research", input.value);
+      });
     });
   }
 
