@@ -149,15 +149,15 @@ export function buildWorkflowSpec(
         search: true,
       };
     case "project-init":
-      return simpleSpec(id, "Create project", withArgs("/project-init", cleanedArgs), [
+      return simpleSpec(id, withTargetLabel("Create", cleanedArgs, "Create project"), withArgs("/project-init", cleanedArgs), [
         "Existing 02_Projects folders for duplicate checks",
       ], ["New project note and knowledge folder"], date);
     case "project-sync":
-      return simpleSpec(id, "Sync project", withArgs("/project-sync", cleanedArgs), [
+      return simpleSpec(id, withTargetLabel("Sync", cleanedArgs, "Sync project"), withArgs("/project-sync", cleanedArgs), [
         "Project note, meeting knowledge, research notes, weekly reviews",
       ], ["Project note synthesis sections"], date);
     case "deadline-plan":
-      return simpleSpec(id, "Plan deadline", withArgs("/deadline-plan", cleanedArgs), [
+      return simpleSpec(id, withTargetLabel("Plan deadline", cleanedArgs, "Plan deadline"), withArgs("/deadline-plan", cleanedArgs), [
         "Project note, existing deadline plan, calendar/reminder context when available",
       ], ["Project Deadline Plan.md and related reminders"], date);
     case "quarterly-plan":
@@ -285,6 +285,10 @@ function withArgs(command: string, args: string): string {
 
 function normalizeInlineArgs(value: string): string {
   return value.replace(/\s+/g, " ").trim();
+}
+
+function withTargetLabel(prefix: string, target: string, fallback: string): string {
+  return target ? `${prefix} ${target}` : fallback;
 }
 
 function normalizeWorkflowArgs(id: OperatorWorkflowId, value: string): string {

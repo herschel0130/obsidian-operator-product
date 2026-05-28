@@ -355,6 +355,9 @@ test("builds editable workflow prompt specs", () => {
   assert.equal(describePrompt(quarterReview.prompt, date).expectedOpenPath, "00_Strategy/2026-Q1/Quarterly Review.md");
 
   const projectSync = buildWorkflowSpec("project-sync", "FM-Copilot", date);
+  assert.equal(buildWorkflowSpec("project-init", "FM-Copilot", date).label, "Create FM-Copilot");
+  assert.equal(projectSync.label, "Sync FM-Copilot");
+  assert.equal(buildWorkflowSpec("deadline-plan", "FM-Copilot", date).label, "Plan deadline FM-Copilot");
   assert.match(projectSync.prompt, /^\/project-sync FM-Copilot\n\nOperator run metadata/);
   assert.match(describePrompt("/annual-vision review", date).prompt, /^\/annual-vision review\n\nOperator run metadata/);
   assert.match(buildWorkflowSpec("quarterly-plan", "pulse 05", date).prompt, /^\/quarterly-plan pulse 05\n\nOperator run metadata/);
