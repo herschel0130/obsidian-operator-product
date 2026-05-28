@@ -42,6 +42,7 @@ import {
   type OperatorEnvironmentStatus,
   type StatusState,
 } from "./status";
+import { buildTodayScheduleLines } from "./today-surface";
 import type { MarkdownActionItem } from "./vault-parsers";
 import { initializeVault, type VaultInitializationResult } from "./vault-init";
 import {
@@ -687,10 +688,7 @@ class OperatorDashboardView extends ItemView {
 
     const schedule = grid.createDiv({ cls: "operator-note-panel" });
     schedule.createEl("h4", { text: "Schedule" });
-    const meetingsToday = home.blockers.meetings
-      .filter((meeting) => meeting.timing === "today")
-      .map((meeting) => meeting.dateIso ? `${meeting.dateIso} - ${meeting.text}` : meeting.text);
-    renderTextList(schedule, home.daily.schedule.length > 0 ? home.daily.schedule : meetingsToday, "No schedule lines or meetings for today.");
+    renderTextList(schedule, buildTodayScheduleLines(home.daily.schedule, home.blockers.meetings), "No schedule lines or meetings for today.");
 
     if (home.weeklyTodo.openTasks.length > 0) {
       const week = grid.createDiv({ cls: "operator-note-panel" });

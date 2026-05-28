@@ -7,6 +7,7 @@ import { startAlignedMinuteRefresh } from "../src/clock-refresh";
 import { buildCliHandoff } from "../src/cli-handoff";
 import { buildProjectNote, createNativeProject, normalizeProjectName } from "../src/projects";
 import { formatExpectedNoteStatus, formatRunCompletionNotice } from "../src/run-notices";
+import { buildTodayScheduleLines } from "../src/today-surface";
 import { parseActiveProjectNote, parseBlockers, parseDailyNote, parseWeeklyTodo } from "../src/vault-parsers";
 import { buildAdvancedPromptPlaceholder, buildDefaultDailyPrompt, buildStartDaySpec, buildWorkflowSpec, describePrompt, resolveAdvancedPrompt, resolveAnnualShortcutInput, resolveAnnualYearInput, resolveAvailableHoursInput, resolveEditedPreviewSpec, resolveQuarterlyPeriodInput, resolveWeeklyPeriodInput } from "../src/workflows";
 
@@ -188,6 +189,26 @@ test("parses waiting-on items and meeting timing from Blockers", () => {
   assert.equal(summary.meetings[0].dateIso, "2026-05-22");
   assert.equal(summary.meetings[0].project, "FM-Copilot");
   assert.equal(summary.meetings[1].timing, "tomorrow");
+});
+
+test("combines daily schedule lines with today's blocker meetings", () => {
+  const blockers = parseBlockers(
+    `# Blockers
+
+## Meetings
+
+- [ ] **Fri May 22, 2 PM** FM-Copilot sync
+- [ ] **Fri May 22, 4 PM** Design review
+- [ ] **Sat May 23, 10 AM** Research review
+`,
+    new Date("2026-05-22T09:00:00"),
+    ["FM-Copilot"],
+  );
+
+  assert.deepEqual(buildTodayScheduleLines(["10:00 Design review"], blockers.meetings), [
+    "10:00 Design review",
+    "2026-05-22 - Fri May 22, 2 PM FM-Copilot sync",
+  ]);
 });
 
 test("parses today note focus, actions, schedule, and capture count", () => {
