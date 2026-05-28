@@ -85,7 +85,7 @@ The dashboard will show:
 - Native project creation that writes `02_Projects/<Project>/<Project>.md` and `04_Knowledge/<Project>/` directly
 - Collapsed advanced workflows for weekly planning/review, annual vision/review, quarterly planning, AI weekly digest, GitHub/arXiv scans, project sync, deadline plans, meetings, multi-line event lists, content, research, custom prompts, CLI handoff, and legacy slash commands such as `/project-init`
 - Collapsed setup health for Codex, skills, optional integrations, and vault initialization state
-- Last-run review with status, summary, raw log, and an expected-note opener for daily, weekly, annual, and quarterly workflow outputs when available
+- Last-run review with status, summary, raw log, and an expected-note opener for daily, weekly, AI weekly digest, annual, and quarterly workflow outputs when available
 
 ### 4. Run the first five-minute flow
 

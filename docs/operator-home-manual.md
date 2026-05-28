@@ -103,7 +103,7 @@ Every agent workflow opens a Preview showing the exact prompt, target notes, exp
 
 The same daily pre-flight guard is added when you type `/daily-init ...` in **Agent prompt / CLI command** and run it from the Preview.
 
-For daily, weekly, annual, and quarterly workflows, Operator also predicts the main output note. If you edit the Preview or leave it open across a clock boundary, Operator keeps that expected note aligned with the `Local date` already embedded in the prompt. The metadata block is not treated as command arguments, so a Monday weekly review still targets the prior week and a quarterly review still targets the prior quarter. After a successful run, it opens that note when present; **Last Run** keeps an **Open expected note** button for quick review. Monthly pulse paths are based on the target month, so January and quarter-boundary runs still open the previous year's Q4 pulse when appropriate.
+For daily, weekly, AI weekly digest, annual, and quarterly workflows, Operator also predicts the main output note. If you edit the Preview or leave it open across a clock boundary, Operator keeps that expected note aligned with the `Local date` already embedded in the prompt. The metadata block is not treated as command arguments, so a Monday weekly review still targets the prior week and a quarterly review still targets the prior quarter. After a successful run, it opens that note when present; **Last Run** keeps an **Open expected note** button for quick review. Monthly pulse paths are based on the target month, so January and quarter-boundary runs still open the previous year's Q4 pulse when appropriate.
 
 ## Troubleshooting
 

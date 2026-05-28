@@ -96,10 +96,13 @@ export function buildWorkflowSpec(
         `Review week: ${weeklyReviewFolder.replace("01_Execution/", "")}`,
       ]);
     case "ai-weekly-digest":
+      const aiWeeklyTarget = getAiWeeklyDigestTarget(cleanedArgs, date);
       return {
         ...simpleSpec(id, "AI weekly digest", withArgs("/ai-weekly-digest", cleanedArgs), [
           "Recent AI research, GitHub trending notes, RSS and web sources",
-        ], ["04_Knowledge/AI-Weekly/ and the current Weekly Review when present"], date),
+        ], ["04_Knowledge/AI-Weekly/ and the current Weekly Review when present"], date, `04_Knowledge/AI-Weekly/${aiWeeklyTarget} - AI Weekly Digest.md`, [
+          `AI weekly target: ${aiWeeklyTarget}`,
+        ]),
         search: true,
       };
     case "daily-github":
@@ -338,6 +341,17 @@ function getWeeklyReviewFolder(args: string, date: Date): string {
     ? addDays(date, -7)
     : date;
   return `01_Execution/${getIsoWeekInfo(target).label}`;
+}
+
+function getAiWeeklyDigestTarget(args: string, date: Date): string {
+  const explicit = args.match(/\b(\d{4}-W\d{2})\b/i)?.[1];
+  if (explicit) {
+    return explicit.toUpperCase();
+  }
+  const target = args.toLowerCase() === "last" || date.getDay() === 1
+    ? addDays(date, -7)
+    : date;
+  return getIsoWeekInfo(target).label;
 }
 
 function getAnnualExpectedPath(args: string, date: Date): string {
