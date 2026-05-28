@@ -70,6 +70,10 @@ export function formatDateKey(date: Date): string {
   ].join("-");
 }
 
+export function hasLocalDateChanged(previousDateKey: string, date = new Date()): boolean {
+  return previousDateKey !== formatDateKey(date);
+}
+
 export function addDays(date: Date, days: number): Date {
   const next = new Date(date);
   next.setDate(next.getDate() + days);

@@ -15,7 +15,7 @@ import {
   WorkspaceLeaf,
   setIcon,
 } from "obsidian";
-import { formatDateKey, getIsoWeekInfo, getQuarterInfo } from "./dates";
+import { formatDateKey, getIsoWeekInfo, getQuarterInfo, hasLocalDateChanged } from "./dates";
 import { buildCliHandoff } from "./cli-handoff";
 import { appendQuickCapture, readOperatorHomeState, updateMarkdownTaskState, type OperatorHomeState } from "./home-state";
 import { createNativeProject, normalizeProjectName, type NativeProjectInput } from "./projects";
@@ -60,9 +60,11 @@ export default class OperatorControlPlugin extends Plugin {
   status: OperatorEnvironmentStatus | null = null;
   activeRun: RunningProcess | null = null;
   activeRunBuffer: OperatorRunRecord | null = null;
+  private renderedDateKey = formatDateKey(new Date());
 
   async onload(): Promise<void> {
     await this.loadSettings();
+    this.registerInterval(window.setInterval(() => this.refreshViewsAfterDateRollover(), 60_000));
 
     this.registerView(VIEW_TYPE_OPERATOR, (leaf) => new OperatorDashboardView(leaf, this));
 
@@ -386,12 +388,21 @@ export default class OperatorControlPlugin extends Plugin {
   }
 
   renderViews(): void {
+    this.renderedDateKey = formatDateKey(new Date());
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_OPERATOR)) {
       const view = leaf.view;
       if (view instanceof OperatorDashboardView) {
         void view.render();
       }
     }
+  }
+
+  private refreshViewsAfterDateRollover(): void {
+    if (!hasLocalDateChanged(this.renderedDateKey)) {
+      return;
+    }
+    this.renderedDateKey = formatDateKey(new Date());
+    this.renderViews();
   }
 }
 

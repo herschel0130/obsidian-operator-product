@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
-import { formatRunContext, getDailyNotePath, getExecutionWeekFolder, getIsoWeekInfo, getQuarterInfo } from "../src/dates";
+import { formatRunContext, getDailyNotePath, getExecutionWeekFolder, getIsoWeekInfo, getQuarterInfo, hasLocalDateChanged } from "../src/dates";
 import { appendQuickCapture, readOperatorHomeState, updateMarkdownTaskState } from "../src/home-state";
 import { buildCliHandoff } from "../src/cli-handoff";
 import { buildProjectNote, createNativeProject, normalizeProjectName } from "../src/projects";
@@ -17,6 +17,8 @@ test("computes ISO week folders and daily note paths", () => {
   });
   assert.equal(getExecutionWeekFolder(date), "01_Execution/2026-W01");
   assert.equal(getDailyNotePath(date), "01_Execution/2026-W01/2026-01-01.md");
+  assert.equal(hasLocalDateChanged("2026-05-22", new Date("2026-05-22T23:59:00")), false);
+  assert.equal(hasLocalDateChanged("2026-05-22", new Date("2026-05-23T00:01:00")), true);
 });
 
 test("formats run context for agent prompts with local clock and planning period", () => {
