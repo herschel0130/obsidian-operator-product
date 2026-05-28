@@ -82,7 +82,7 @@ The dashboard will show:
 - Native **Done** and **Carry** actions for visible daily and weekly tasks, editing the source Markdown checkbox instead of creating a separate task database
 - Native **Quick Capture** for ideas, tasks, meeting notes, and research questions without leaving Operator Home; pasted multi-line captures become separate Markdown items, and captured task checkboxes appear in today's **Next actions**
 - Active projects from `02_Projects/`, plus `## Now` next actions
-- Current-week meetings and waiting-on items from `Blockers.md`
+- Current-week meetings and waiting-on items from `Blockers.md`, with native **Done** actions for resolved blockers and completed meetings
 - Native project creation that writes `02_Projects/<Project>/<Project>.md` and `04_Knowledge/<Project>/` directly
 - Collapsed advanced workflows for weekly planning/review, annual vision/review, quarterly planning, AI weekly digest, GitHub/arXiv scans, project sync, deadline plans, meetings, multi-line event lists, content, research, custom prompts, CLI handoff, and legacy slash commands such as `/project-init`
 - Collapsed setup health for Codex, skills, optional integrations, and vault initialization state

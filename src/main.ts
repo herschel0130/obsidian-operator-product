@@ -753,6 +753,9 @@ class OperatorDashboardView extends ItemView {
         item.createEl("strong", { text: meeting.timing });
         item.createEl("span", { text: meeting.dateIso ? `${meeting.dateIso} - ${meeting.text}` : meeting.text });
         const actions = item.createDiv({ cls: "operator-inline-actions" });
+        createButton(actions, "check", "Done", () => {
+          void this.plugin.updateTaskFromUi(home.blockersPath, meeting, "x");
+        });
         if (meeting.project) {
           const args = [meeting.project, meeting.dateIso].filter(Boolean).join(" ");
           createButton(actions, "clipboard-list", "Prep", () => {
@@ -770,7 +773,12 @@ class OperatorDashboardView extends ItemView {
     } else {
       const list = waiting.createEl("ul", { cls: "operator-list" });
       for (const item of home.blockers.waitingOn.slice(0, 6)) {
-        list.createEl("li", { text: item.text });
+        const row = list.createEl("li");
+        row.createEl("span", { text: item.text });
+        const actions = row.createDiv({ cls: "operator-inline-actions" });
+        createButton(actions, "check", "Done", () => {
+          void this.plugin.updateTaskFromUi(home.blockersPath, item, "x");
+        });
       }
     }
   }

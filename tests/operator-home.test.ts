@@ -357,6 +357,38 @@ test("updates markdown task state in the source note", async () => {
   assert.match(markdown, /- \[ \] Carry research/);
 });
 
+test("updates blocker waiting-on and meeting checkbox state", async () => {
+  const app = createFakeApp();
+  await app.vault.create("01_Execution/2026-W21/Blockers.md", [
+    "# Blockers",
+    "",
+    "## Waiting On",
+    "",
+    "- [ ] Alice: Send launch notes",
+    "",
+    "## Meetings",
+    "",
+    "- [ ] **Fri May 22, 2 PM** FM-Copilot sync",
+  ].join("\n"));
+
+  const file = app.vault.getAbstractFileByPath("01_Execution/2026-W21/Blockers.md");
+  const blockers = parseBlockers(await app.vault.read(file as { path: string }), new Date("2026-05-22T09:00:00"), ["FM-Copilot"]);
+
+  await updateMarkdownTaskState(app as never, "01_Execution/2026-W21/Blockers.md", blockers.waitingOn[0].raw, "x");
+  await updateMarkdownTaskState(app as never, "01_Execution/2026-W21/Blockers.md", blockers.meetings[0].raw, "x");
+
+  const markdown = await app.vault.read(file as { path: string });
+  assert.match(markdown, /- \[x\] Alice: Send launch notes/);
+  assert.match(markdown, /- \[x\] \*\*Fri May 22, 2 PM\*\* FM-Copilot sync/);
+});
+
+test("dashboard wires blocker rows to native done actions", () => {
+  const source = readFileSync("src/main.ts", "utf8");
+
+  assert.match(source, /updateTaskFromUi\(home\.blockersPath, meeting, "x"\)/);
+  assert.match(source, /updateTaskFromUi\(home\.blockersPath, item, "x"\)/);
+});
+
 test("does not update ambiguous duplicate markdown task lines", async () => {
   const app = createFakeApp();
   await app.vault.create("01_Execution/2026-W21/Weekly Todo.md", [
