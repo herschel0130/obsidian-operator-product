@@ -77,12 +77,12 @@ Click the Operator dashboard icon in the left ribbon, or run **Operator: Open da
 The dashboard will show:
 
 - **Today** from the current daily note: `## Focus`, `### Action Items`, `## Schedule`, and the current weekly queue
-- **Start my day** with available-hours and manual-items inputs, opening an editable Preview before the agent runs
+- **Start my day** with available-hours and manual-items inputs, opening an editable Preview that includes local date, time, timezone, ISO week, and quarter before the agent runs
 - Native **Quick Capture** for ideas, tasks, meeting notes, and research questions without leaving Operator Home
 - Active projects from `02_Projects/`, plus `## Now` next actions
 - Current-week meetings and waiting-on items from `Blockers.md`
 - Native project creation that writes `02_Projects/<Project>/<Project>.md` and `04_Knowledge/<Project>/` directly
-- Collapsed advanced workflows for weekly planning/review, project sync, deadline plans, meetings, content, research, custom prompts, CLI handoff, and legacy slash commands such as `/project-init`
+- Collapsed advanced workflows for weekly planning/review, annual vision, quarterly planning, AI weekly digest, GitHub/arXiv scans, project sync, deadline plans, meetings, events, content, research, custom prompts, CLI handoff, and legacy slash commands such as `/project-init`
 - Collapsed setup health for Codex, skills, optional integrations, and vault initialization state
 - Last-run review with status, summary, raw log, and an expected-note opener when available
 

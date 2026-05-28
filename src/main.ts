@@ -15,7 +15,7 @@ import {
   WorkspaceLeaf,
   setIcon,
 } from "obsidian";
-import { formatDateKey } from "./dates";
+import { formatDateKey, getIsoWeekInfo, getQuarterInfo } from "./dates";
 import { appendQuickCapture, readOperatorHomeState, type OperatorHomeState } from "./home-state";
 import { createNativeProject, normalizeProjectName, type NativeProjectInput } from "./projects";
 import {
@@ -419,7 +419,7 @@ class OperatorDashboardView extends ItemView {
     titleWrap.createEl("p", {
       cls: "operator-muted",
       text: status.vault.ready
-        ? `${formatDateKey(new Date())} · ${home.dailyNotePath}`
+        ? `${formatHeaderRunContext(new Date())} · ${home.dailyNotePath}`
         : "Initialize the Markdown structure once, then use the vault itself as the interface.",
     });
 
@@ -673,6 +673,24 @@ class OperatorDashboardView extends ItemView {
       void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("weekly-review"));
     }, undefined, !canRun);
 
+    const strategy = createWorkflowCard(grid, "Strategy review", "Annual vision, quarterly plans, monthly pulses, and quarter reviews stay one click away.");
+    const strategyInput = createInlineInput(strategy, "Year / quarter / month", "2026, 2026-Q2, or 05");
+    createButton(strategy, "compass", "Annual vision", () => {
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("annual-vision", strategyInput.value));
+    }, undefined, !canRun);
+    createButton(strategy, "milestone", "Quarter plan", () => {
+      const args = strategyInput.value.trim() ? `init ${strategyInput.value}` : "init";
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("quarterly-plan", args));
+    }, undefined, !canRun);
+    createButton(strategy, "activity", "Monthly pulse", () => {
+      const args = strategyInput.value.trim() ? `pulse ${strategyInput.value}` : "pulse";
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("quarterly-plan", args));
+    }, undefined, !canRun);
+    createButton(strategy, "history", "Quarter review", () => {
+      const args = strategyInput.value.trim() ? `review ${strategyInput.value}` : "review";
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("quarterly-plan", args));
+    }, undefined, !canRun);
+
     const project = createWorkflowCard(grid, "Work on project", "Create structure natively, or run agent workflows when context needs synthesis.");
     const projectInput = createInlineInput(project, "Project name", "Customer Discovery", home.activeProjects[0]?.name ?? "");
     createButton(project, "folder-plus", "New project", () => void this.plugin.openProjectCreation(projectInput.value));
@@ -727,6 +745,27 @@ class OperatorDashboardView extends ItemView {
       const topic = requireInput(topicInput, "a research topic");
       if (topic) {
         void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("deep-research", topic));
+      }
+    }, undefined, !canRun);
+
+    const intelligence = createWorkflowCard(grid, "Intelligence", "Run the optional research automations behind the daily and weekly system.");
+    const intelligenceInput = createInlineInput(intelligence, "Filter", "last, rust weekly 15, or robotics");
+    createButton(intelligence, "newspaper", "AI weekly", () => {
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("ai-weekly-digest", intelligenceInput.value));
+    }, undefined, !canRun);
+    createButton(intelligence, "github", "GitHub trends", () => {
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("daily-github", intelligenceInput.value));
+    }, undefined, !canRun);
+    createButton(intelligence, "graduation-cap", "Academic scan", () => {
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("daily-academic", intelligenceInput.value));
+    }, undefined, !canRun);
+
+    const events = createWorkflowCard(grid, "Calendar / events", "Batch-add commitments so weekly setup can route them into Blockers and project notes.");
+    const eventsInput = createInlineInput(events, "Events", "Paste event list or deadline notes");
+    createButton(events, "calendar-plus", "Add events", () => {
+      const eventsText = requireInput(eventsInput, "event details");
+      if (eventsText) {
+        void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("add-events", eventsText));
       }
     }, undefined, !canRun);
 
@@ -1122,6 +1161,15 @@ function buildCliHandoff(vaultPath: string | null, prompt: string): string {
 
 function shellQuote(value: string): string {
   return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
+function formatHeaderRunContext(date: Date): string {
+  const time = [
+    String(date.getHours()).padStart(2, "0"),
+    String(date.getMinutes()).padStart(2, "0"),
+  ].join(":");
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "local";
+  return `${formatDateKey(date)} ${time} ${timezone} · ${getIsoWeekInfo(date).label} · ${getQuarterInfo(date).label}`;
 }
 
 async function copyTextToClipboard(value: string, successMessage: string): Promise<void> {

@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
-import { getDailyNotePath, getExecutionWeekFolder, getIsoWeekInfo } from "../src/dates";
+import { formatRunContext, getDailyNotePath, getExecutionWeekFolder, getIsoWeekInfo, getQuarterInfo } from "../src/dates";
 import { appendQuickCapture, readOperatorHomeState } from "../src/home-state";
 import { buildProjectNote, createNativeProject, normalizeProjectName } from "../src/projects";
 import { parseActiveProjectNote, parseBlockers, parseDailyNote, parseWeeklyTodo } from "../src/vault-parsers";
@@ -16,6 +16,19 @@ test("computes ISO week folders and daily note paths", () => {
   });
   assert.equal(getExecutionWeekFolder(date), "01_Execution/2026-W01");
   assert.equal(getDailyNotePath(date), "01_Execution/2026-W01/2026-01-01.md");
+});
+
+test("formats run context for agent prompts with local clock and planning period", () => {
+  const date = new Date("2026-05-22T09:15:00");
+
+  assert.deepEqual(getQuarterInfo(date), {
+    year: 2026,
+    quarter: 2,
+    label: "2026-Q2",
+  });
+  assert.match(formatRunContext(date), /Local date: 2026-05-22/);
+  assert.match(formatRunContext(date), /ISO week: 2026-W21/);
+  assert.match(formatRunContext(date), /Quarter: 2026-Q2/);
 });
 
 test("parses active project notes from frontmatter and ## Now", () => {
@@ -171,12 +184,18 @@ test("builds editable workflow prompt specs", () => {
   const date = new Date("2026-05-22T09:00:00");
   const start = buildStartDaySpec(7, "review deck, email Kai", date);
 
-  assert.equal(start.prompt, "/daily-init 7\n\nManual items to consider today:\nreview deck, email Kai");
+  assert.match(start.prompt, /^\/daily-init 7\n\nRun context:/);
+  assert.match(start.prompt, /Local date: 2026-05-22/);
+  assert.match(start.prompt, /Manual items to consider today:\nreview deck, email Kai/);
   assert.equal(start.expectedOpenPath, "01_Execution/2026-W21/2026-05-22.md");
   assert.equal(start.search, true);
 
   const projectSync = buildWorkflowSpec("project-sync", "FM-Copilot");
   assert.equal(projectSync.prompt, "/project-sync FM-Copilot");
+
+  assert.equal(buildWorkflowSpec("annual-vision", "review 2026").prompt, "/annual-vision review 2026");
+  assert.equal(buildWorkflowSpec("quarterly-plan", "pulse 05").prompt, "/quarterly-plan pulse 05");
+  assert.equal(buildWorkflowSpec("ai-weekly-digest", "last").prompt, "/ai-weekly-digest last");
 
   const described = describePrompt("/deep-research AI evals", date);
   assert.equal(described.id, "deep-research");

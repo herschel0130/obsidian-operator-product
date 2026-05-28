@@ -90,13 +90,16 @@ Use **Run /project-init** only when you want the legacy agent-guided project set
 Open **More workflows** for less frequent or reasoning-heavy work:
 
 - **Weekly setup / Weekly review** for execution planning and synthesis.
+- **Annual vision / Quarter plan / Monthly pulse / Quarter review** for the strategic layer from `00_Strategy/`.
 - **Sync / Deadline plan** for project-level agent work.
 - **Prep / Process meeting** for agendas, transcripts, decisions, and actions.
 - **Extract ideas / Draft / Deep research** for content and research workflows.
+- **AI weekly / GitHub trends / Academic scan** for optional intelligence automations.
+- **Add events** for routing calendar and reminder commitments into the weekly system.
 - **Agent prompt / CLI command** for raw slash commands or freeform prompts.
 - **Copy CLI handoff** copies the vault `cd` command plus the prompt so power users can continue in Codex CLI without the Obsidian UI getting in the way.
 
-Every agent workflow opens a Preview showing the exact prompt and likely read/write areas before launching Codex or Claude.
+Every agent workflow opens a Preview showing the exact prompt and likely read/write areas before launching Codex or Claude. **Start my day** includes local date, time, timezone, ISO week, and quarter in the prompt so schedule generation does not depend on hidden agent clock assumptions.
 
 ## Troubleshooting
 

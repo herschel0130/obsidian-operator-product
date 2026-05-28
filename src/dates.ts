@@ -4,6 +4,12 @@ export interface IsoWeekInfo {
   label: string;
 }
 
+export interface QuarterInfo {
+  year: number;
+  quarter: number;
+  label: string;
+}
+
 export function getIsoWeekInfo(date = new Date()): IsoWeekInfo {
   const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const dayNumber = target.getUTCDay() || 7;
@@ -18,6 +24,34 @@ export function getIsoWeekInfo(date = new Date()): IsoWeekInfo {
     week,
     label: `${isoYear}-W${String(week).padStart(2, "0")}`,
   };
+}
+
+export function getQuarterInfo(date = new Date()): QuarterInfo {
+  const year = date.getFullYear();
+  const quarter = Math.floor(date.getMonth() / 3) + 1;
+  return {
+    year,
+    quarter,
+    label: `${year}-Q${quarter}`,
+  };
+}
+
+export function formatRunContext(date = new Date()): string {
+  const isoWeek = getIsoWeekInfo(date).label;
+  const quarter = getQuarterInfo(date).label;
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "local";
+  const localTime = [
+    String(date.getHours()).padStart(2, "0"),
+    String(date.getMinutes()).padStart(2, "0"),
+  ].join(":");
+
+  return [
+    `Local date: ${formatDateKey(date)}`,
+    `Local time: ${localTime}`,
+    `Timezone: ${timezone}`,
+    `ISO week: ${isoWeek}`,
+    `Quarter: ${quarter}`,
+  ].join("\n");
 }
 
 export function getExecutionWeekFolder(date = new Date()): string {
