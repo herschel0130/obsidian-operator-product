@@ -1,7 +1,7 @@
 {
   "id": "operator-control",
   "name": "Operator",
-  "version": "0.3.52",
+  "version": "0.3.53",
   "minAppVersion": "1.7.2",
   "description": "Run a Markdown-first Operator Home with native vault setup, project creation, quick capture, daily briefings, and agent workflows.",
   "author": "Herschel, based on Obsidian Operator by Yuhan Wang",
