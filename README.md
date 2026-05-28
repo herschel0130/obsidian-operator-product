@@ -77,7 +77,7 @@ Click the Operator dashboard icon in the left ribbon, or run **Operator: Open da
 The dashboard will show:
 
 - **Today** from the current daily note: `## Focus`, `### Action Items`, `## Schedule`, and the current weekly queue
-- **Start my day** with available-hours inputs that preserve half-hour budgets, manual-items input, and an editable Preview that includes local date, time, timezone, ISO week, and quarter as metadata before the agent runs; the same metadata is added to built-in weekly, strategy, project, meeting, content, and research workflow previews so agent runs do not depend on hidden clock assumptions
+- **Start my day** with available-hours inputs that preserve half-hour budgets, manual-items input, and an editable Preview that includes local date, time, timezone, ISO week, quarter, and the possible boundary cascade before the agent runs; the same clock metadata is added to built-in weekly, strategy, project, meeting, content, and research workflow previews so agent runs do not depend on hidden clock assumptions
 - Native **Done** and **Carry** actions for visible daily and weekly tasks, editing the source Markdown checkbox instead of creating a separate task database
 - Native **Quick Capture** for ideas, tasks, meeting notes, and research questions without leaving Operator Home
 - Active projects from `02_Projects/`, plus `## Now` next actions

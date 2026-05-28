@@ -1029,6 +1029,9 @@ class RunPreviewModal extends Modal {
     const columns = contentEl.createDiv({ cls: "operator-preview-grid" });
     renderAreaList(columns, "Likely reads", this.spec.readAreas);
     renderAreaList(columns, "Likely writes", this.spec.writeAreas);
+    if (this.spec.runNotes?.length) {
+      renderAreaList(contentEl, "May also run", this.spec.runNotes);
+    }
 
     const row = contentEl.createDiv({ cls: "operator-modal-actions" });
     createButton(row, "x", "Cancel", () => {

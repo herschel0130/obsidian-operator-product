@@ -229,6 +229,12 @@ test("builds editable workflow prompt specs", () => {
   assert.ok(start.prompt.indexOf("Operator run metadata") < start.prompt.indexOf("Manual items to consider today"));
   assert.equal(start.expectedOpenPath, "01_Execution/2026-W21/2026-05-22.md");
   assert.equal(start.search, true);
+  assert.deepEqual(start.runNotes, [
+    "Pre-flight may close last week: /weekly-review, then /ai-weekly-digest.",
+    "Pre-flight may close last month: /quarterly-plan pulse for the target month.",
+    "Pre-flight may close/open quarter boundaries: /quarterly-plan review, then /quarterly-plan init.",
+    "Always opens this week with /weekly-init before writing today's briefing.",
+  ]);
 
   const fractionalDay = buildStartDaySpec(4.5, "", date);
   assert.match(fractionalDay.prompt, /^\/daily-init 4\.5\n\nOperator run metadata/);

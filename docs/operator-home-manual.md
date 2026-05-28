@@ -99,7 +99,7 @@ Open **More workflows** for less frequent or reasoning-heavy work:
 - **Agent prompt / CLI command** for raw slash commands or freeform prompts.
 - **Copy CLI handoff** copies the vault `cd` command plus the prompt so power users can continue in Codex CLI without the Obsidian UI getting in the way.
 
-Every agent workflow opens a Preview showing the exact prompt and likely read/write areas before launching Codex or Claude. Built-in workflows include local date, time, timezone, ISO week, and quarter as metadata, not manual tasks, so daily scheduling, weekly planning, annual vision, quarterly planning, and research runs do not depend on hidden agent clock assumptions. **Start my day** also runs the original boundary cascade when needed: weekly review/setup, AI weekly digest, monthly pulse, and quarterly plan/review.
+Every agent workflow opens a Preview showing the exact prompt and likely read/write areas before launching Codex or Claude. Built-in workflows include local date, time, timezone, ISO week, and quarter as metadata, not manual tasks, so daily scheduling, weekly planning, annual vision, quarterly planning, and research runs do not depend on hidden agent clock assumptions. **Start my day** also shows the original boundary cascade before launch: weekly review/setup, AI weekly digest, monthly pulse, and quarterly plan/review.
 
 For daily, weekly, annual, and quarterly workflows, Operator also predicts the main output note. After a successful run, it opens that note when present; **Last Run** keeps an **Open expected note** button for quick review. Monthly pulse paths are based on the target month, so January and quarter-boundary runs still open the previous year's Q4 pulse when appropriate.
 

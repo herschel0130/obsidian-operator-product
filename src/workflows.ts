@@ -27,6 +27,7 @@ export interface OperatorWorkflowRunSpec {
   readAreas: string[];
   writeAreas: string[];
   expectedOpenPath?: string;
+  runNotes?: string[];
   search?: boolean;
 }
 
@@ -55,6 +56,12 @@ export function buildStartDaySpec(hours: number, manualItems: string, date = new
       "05_Content/Backlog.md content ideas",
     ],
     expectedOpenPath: getDailyNotePath(date),
+    runNotes: [
+      "Pre-flight may close last week: /weekly-review, then /ai-weekly-digest.",
+      "Pre-flight may close last month: /quarterly-plan pulse for the target month.",
+      "Pre-flight may close/open quarter boundaries: /quarterly-plan review, then /quarterly-plan init.",
+      "Always opens this week with /weekly-init before writing today's briefing.",
+    ],
     search: true,
   };
 }
