@@ -501,7 +501,11 @@ function getAiWeeklyDigestTarget(args: string, date: Date): string {
 }
 
 function getAiWeeklyDigestPromptArgs(args: string, target: string): string {
-  return args || target;
+  const trimmed = args.trim();
+  if (!trimmed || trimmed.toLowerCase() === "last" || /^\d{4}-W\d{2}$/i.test(trimmed)) {
+    return target;
+  }
+  return args;
 }
 
 function getAnnualExpectedPath(args: string, date: Date): string {
