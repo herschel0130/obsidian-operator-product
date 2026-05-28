@@ -7,10 +7,10 @@ Annual vision setting and year-end retrospective.
 
 ## Arguments
 
-- `[year]` — target year. Default: current year.
+- `[year]` — target year. Vision default: current year. Review default: current year in December, otherwise previous year.
 - `review` — run in retrospective mode instead of vision-setting.
 
-If the prompt includes `review`, use Review Mode. If the prompt includes `2026`, use that as the target year. Auto-detect only when no explicit mode/year is supplied: if `00_Strategy/YYYY Vision.md` exists and it's December → review mode. Otherwise → vision mode.
+If the prompt includes `review`, use Review Mode. If the prompt includes `2026`, use that as the target year. In Review Mode without an explicit year, target the current year in December and the previous year otherwise. Auto-detect only when no explicit mode/year is supplied: if `00_Strategy/YYYY Vision.md` exists and it's December → review mode. Otherwise → vision mode.
 
 ## Vision Mode (Year-Start)
 

@@ -77,7 +77,7 @@ Click the Operator dashboard icon in the left ribbon, or run **Operator: Open da
 The dashboard will show:
 
 - **Today** from the current daily note: `## Focus`, `### Action Items`, `## Schedule`, and the current weekly queue
-- **Start my day** with available-hours inputs that preserve half-hour budgets, manual-items input, and an editable Preview that includes local date, time, timezone, ISO week, quarter, exact target notes, and only the weekly/monthly/quarterly boundary actions relevant to today's date; its daily guard gives concrete targets in the execution-order sentence, weekly shortcuts expose a compact Week field for `YYYY-WXX` or `last` with `last` resolved before preview, annual shortcuts expose a visible year field, quarterly/monthly shortcuts expose a compact Period field for `YYYY-QX` or `YYYY-MM`, while advanced prompts preserve raw slash commands
+- **Start my day** with available-hours inputs that preserve half-hour budgets, manual-items input, and an editable Preview that includes local date, time, timezone, ISO week, quarter, exact target notes, and only the weekly/monthly/quarterly boundary actions relevant to today's date; its daily guard gives concrete targets in the execution-order sentence, weekly shortcuts expose a compact Week field for `YYYY-WXX` or `last` with `last` resolved before preview, annual shortcuts expose a visible year field where blank review targets the most recent completed year, quarterly/monthly shortcuts expose a compact Period field for `YYYY-QX` or `YYYY-MM`, while advanced prompts preserve raw slash commands
 - Native **Done** and **Carry** actions for visible daily and weekly tasks, editing the source Markdown checkbox instead of creating a separate task database
 - Native **Quick Capture** for ideas, tasks, meeting notes, and research questions without leaving Operator Home
 - Active projects from `02_Projects/`, plus `## Now` next actions
@@ -190,7 +190,7 @@ See [CLAUDE.md](skills/vault-init/assets/CLAUDE.md) for full conventions, frontm
 | Skill | Description |
 |-------|-------------|
 | `quarterly-plan` | Three modes: `init YYYY-QX`, `review YYYY-QX`, `pulse YYYY-MM` for explicit targets. Init and review update existing files rather than aborting. |
-| `annual-vision` | Annual vision or `review YYYY` retrospective with explicit target years — reads existing files as baseline for updates |
+| `annual-vision` | Annual vision or `review YYYY` retrospective with explicit target years. Review without a year targets the current year in December and the previous year otherwise. Reads existing files as baseline for updates. |
 
 ### Knowledge & Synthesis
 

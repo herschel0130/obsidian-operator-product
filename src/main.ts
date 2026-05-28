@@ -760,15 +760,15 @@ class OperatorDashboardView extends ItemView {
     }, undefined, !canRun);
 
     const strategy = createWorkflowCard(grid, "Strategy review", "Annual vision/review, quarterly plans, monthly pulses, and quarter reviews stay one click away.");
-    const annualYearInput = createInlineInput(strategy, "Year", "YYYY", String(new Date().getFullYear()));
+    const annualYearInput = createInlineInput(strategy, "Year", "YYYY, last, or next");
     const strategyPeriodInput = createInlineInput(strategy, "Period", "2026-Q2 or 2026-04");
     createButton(strategy, "compass", "Annual vision", () => {
-      const year = resolveAnnualYearInput(annualYearInput.value);
+      const year = resolveAnnualYearInput("vision", annualYearInput.value);
       annualYearInput.value = year;
       void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("annual-vision", year));
     }, undefined, !canRun);
     createButton(strategy, "book-open-check", "Annual review", () => {
-      const year = resolveAnnualYearInput(annualYearInput.value);
+      const year = resolveAnnualYearInput("review", annualYearInput.value);
       annualYearInput.value = year;
       void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("annual-vision", `review ${year}`));
     }, undefined, !canRun);

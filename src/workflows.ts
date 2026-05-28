@@ -90,10 +90,19 @@ export function resolveAvailableHoursInput(value: string, fallbackHours: number)
   return normalizeDailyHours(parsed);
 }
 
-export function resolveAnnualYearInput(value: string, date = new Date()): string {
+export function resolveAnnualYearInput(mode: "vision" | "review", value: string, date = new Date()): string {
   const year = value.match(/\b(20\d{2})\b/)?.[1];
   if (year) {
     return year;
+  }
+  if (/\bnext\b/i.test(value)) {
+    return String(date.getFullYear() + 1);
+  }
+  if (/\blast\b/i.test(value)) {
+    return String(date.getFullYear() - 1);
+  }
+  if (mode === "review") {
+    return String(date.getMonth() === 11 ? date.getFullYear() : date.getFullYear() - 1);
   }
   return String(date.getFullYear());
 }
@@ -465,20 +474,20 @@ function getAiWeeklyDigestPromptArgs(args: string, target: string): string {
 }
 
 function getAnnualExpectedPath(args: string, date: Date): string {
-  const year = Number(args.match(/\b(20\d{2})\b/)?.[1] ?? date.getFullYear());
   const mode = args.toLowerCase().includes("review") ? "Annual Review" : "Vision";
+  const year = resolveAnnualYearInput(mode === "Annual Review" ? "review" : "vision", args, date);
   return `00_Strategy/${year} ${mode}.md`;
 }
 
 function getAnnualTargetNote(args: string, date: Date): string {
-  const year = Number(args.match(/\b(20\d{2})\b/)?.[1] ?? date.getFullYear());
   const mode = args.toLowerCase().includes("review") ? "Annual review" : "Annual vision";
+  const year = resolveAnnualYearInput(mode === "Annual review" ? "review" : "vision", args, date);
   return `${mode} target: ${year}`;
 }
 
 function getAnnualWorkflowLabel(args: string, date: Date): string {
-  const year = Number(args.match(/\b(20\d{2})\b/)?.[1] ?? date.getFullYear());
   const mode = args.toLowerCase().includes("review") ? "Annual review" : "Annual vision";
+  const year = resolveAnnualYearInput(mode === "Annual review" ? "review" : "vision", args, date);
   return `${mode} ${year}`;
 }
 
@@ -486,8 +495,9 @@ function getAnnualPromptArgs(args: string, date: Date): string {
   if (args.match(/\b20\d{2}\b/)) {
     return args;
   }
-  const year = String(date.getFullYear());
-  return args.toLowerCase().includes("review") ? `review ${year}` : year;
+  const mode = args.toLowerCase().includes("review") ? "review" : "vision";
+  const year = resolveAnnualYearInput(mode, args, date);
+  return mode === "review" ? `review ${year}` : year;
 }
 
 function getQuarterlyExpectedPath(args: string, date: Date): string {
