@@ -506,6 +506,10 @@ test("builds editable workflow prompt specs", () => {
   const editedWeeklyReview = resolveEditedPreviewSpec(buildWorkflowSpec("weekly-review", "", date), "/weekly-review 2026-W18", date);
   assert.equal(editedWeeklyReview.label, "Review 2026-W18");
   assert.equal(editedWeeklyReview.expectedOpenPath, "01_Execution/2026-W18/Weekly Review.md");
+  const originalWeeklyReview = buildWorkflowSpec("weekly-review", "", date);
+  const blankEditedWeeklyReview = resolveEditedPreviewSpec(originalWeeklyReview, "   ", date);
+  assert.equal(blankEditedWeeklyReview.prompt, originalWeeklyReview.prompt);
+  assert.equal(blankEditedWeeklyReview.expectedOpenPath, originalWeeklyReview.expectedOpenPath);
 
   const described = describePrompt("/deep-research AI evals", date);
   assert.equal(described.id, "deep-research");

@@ -312,10 +312,13 @@ export function describePrompt(prompt: string, date = new Date()): OperatorWorkf
 }
 
 export function resolveEditedPreviewSpec(
-  _original: OperatorWorkflowRunSpec,
+  original: OperatorWorkflowRunSpec,
   editedPrompt: string,
   date = new Date(),
 ): OperatorWorkflowRunSpec {
+  if (!editedPrompt.trim()) {
+    return original;
+  }
   return describePrompt(editedPrompt, date);
 }
 
