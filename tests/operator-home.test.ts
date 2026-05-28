@@ -280,6 +280,7 @@ test("builds editable workflow prompt specs", () => {
   assert.match(start.prompt, /\/quarterly-plan pulse 2026-04/);
   assert.match(start.prompt, /\/quarterly-plan review 2026-Q1/);
   assert.match(start.prompt, /\/quarterly-plan init 2026-Q2/);
+  assert.match(start.prompt, /Current week setup: \/weekly-init 2026-W21/);
   assert.match(start.prompt, /Manual items to consider today:\nreview deck, email Kai/);
   assert.ok(start.prompt.indexOf("Daily pre-flight guard") < start.prompt.indexOf("Manual items to consider today"));
   assert.ok(start.prompt.indexOf("Operator run metadata") < start.prompt.indexOf("Manual items to consider today"));
@@ -291,13 +292,13 @@ test("builds editable workflow prompt specs", () => {
   ]);
   assert.equal(start.search, true);
   assert.deepEqual(start.runNotes, [
-    "Always opens this week with /weekly-init before writing today's briefing.",
+    "Always opens target week with /weekly-init 2026-W21 before writing today's briefing.",
   ]);
 
   const mondayStart = buildStartDaySpec(6, "", new Date("2026-05-25T09:00:00"));
   assert.deepEqual(mondayStart.runNotes, [
     "Pre-flight may close last week: /weekly-review 2026-W21, then /ai-weekly-digest 2026-W21.",
-    "Always opens this week with /weekly-init before writing today's briefing.",
+    "Always opens target week with /weekly-init 2026-W22 before writing today's briefing.",
   ]);
 
   const newYearDay = buildStartDaySpec(6, "", new Date("2026-01-01T09:00:00"));
@@ -309,7 +310,7 @@ test("builds editable workflow prompt specs", () => {
   assert.deepEqual(newYearDay.runNotes, [
     "Pre-flight may close last month: /quarterly-plan pulse 2025-12.",
     "Pre-flight may close/open quarter boundaries: /quarterly-plan review 2025-Q4, then /quarterly-plan init 2026-Q1.",
-    "Always opens this week with /weekly-init before writing today's briefing.",
+    "Always opens target week with /weekly-init 2026-W01 before writing today's briefing.",
   ]);
 
   const fractionalDay = buildStartDaySpec(4.5, "", date);
@@ -413,7 +414,7 @@ test("builds editable workflow prompt specs", () => {
   assert.match(typedDaily.prompt, /Daily pre-flight guard:/);
   assert.match(typedDaily.prompt, /\/weekly-review 2026-W20/);
   assert.deepEqual(typedDaily.runNotes, [
-    "Always opens this week with /weekly-init before writing today's briefing.",
+    "Always opens target week with /weekly-init 2026-W21 before writing today's briefing.",
   ]);
 
   const delayedDaily = describePrompt(typedDaily.prompt, new Date("2026-05-23T00:15:00"));

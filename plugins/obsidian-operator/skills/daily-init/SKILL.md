@@ -64,7 +64,7 @@ Same trigger as 1d. Check whether `00_Strategy/YYYY-QX/Quarterly Plan.md` exists
 - If it already exists → skip.
 
 ### 2. Open this week
-Run `/weekly-init` for the **current week**. If the Weekly Todo and Blockers already exist, `/weekly-init` runs in update mode — merging new carried items, deadline tasks, and meetings without overwriting existing content. If they don't exist, `/weekly-init` creates them. Wait for completion, then proceed to data sources.
+Run `/weekly-init YYYY-WXX` for the **current ISO week** using the week shown in the run metadata. If the Weekly Todo and Blockers already exist, `/weekly-init` runs in update mode — merging new carried items, deadline tasks, and meetings without overwriting existing content. If they don't exist, `/weekly-init` creates them. Wait for completion, then proceed to data sources.
 
 ## Data Sources
 

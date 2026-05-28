@@ -348,7 +348,7 @@ function formatDailyPreflightGuard(date = new Date()): string {
     `- Last month pulse: /quarterly-plan pulse ${targets.lastMonth}`,
     `- Last quarter review: /quarterly-plan review ${targets.lastQuarter}`,
     `- Current quarter plan: /quarterly-plan init ${targets.currentQuarter}`,
-    "- Current week setup: /weekly-init",
+    `- Current week setup: /weekly-init ${targets.currentWeek}`,
     "Only continue past a missing boundary artifact if the sub-run fails; record that failure in today's ### Flags.",
   ].join("\n");
 }
@@ -358,6 +358,7 @@ function getDailyBoundaryTargets(date: Date): {
   lastMonth: string;
   lastQuarter: string;
   currentQuarter: string;
+  currentWeek: string;
 } {
   const lastMonth = new Date(date.getFullYear(), date.getMonth() - 1, 1);
   return {
@@ -368,6 +369,7 @@ function getDailyBoundaryTargets(date: Date): {
     ].join("-"),
     lastQuarter: getPreviousQuarter(date).label,
     currentQuarter: getQuarterInfo(date).label,
+    currentWeek: getIsoWeekInfo(date).label,
   };
 }
 
@@ -378,6 +380,7 @@ function getDailyPreviewRunNotes(
     lastMonth: string;
     lastQuarter: string;
     currentQuarter: string;
+    currentWeek: string;
   },
 ): string[] {
   const notes: string[] = [];
@@ -390,7 +393,7 @@ function getDailyPreviewRunNotes(
   if (date.getDate() === 1 && [0, 3, 6, 9].includes(date.getMonth())) {
     notes.push(`Pre-flight may close/open quarter boundaries: /quarterly-plan review ${targets.lastQuarter}, then /quarterly-plan init ${targets.currentQuarter}.`);
   }
-  notes.push("Always opens this week with /weekly-init before writing today's briefing.");
+  notes.push(`Always opens target week with /weekly-init ${targets.currentWeek} before writing today's briefing.`);
   return notes;
 }
 
