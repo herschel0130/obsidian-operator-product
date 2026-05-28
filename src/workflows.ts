@@ -395,8 +395,13 @@ function formatDailyPreflightGuard(date = new Date()): string {
   return [
     "Daily pre-flight guard:",
     "Do not rely on CLI hooks being available in this Obsidian-launched run.",
-    `Check weekly, monthly, and quarterly boundary workflows before writing today's briefing. Only run a boundary command when its date and missing-artifact condition fires, in this order: /weekly-review ${targets.lastWeek}, /ai-weekly-digest ${targets.lastWeek}, /quarterly-plan pulse ${targets.lastMonth}, /quarterly-plan review ${targets.lastQuarter}, /quarterly-plan init ${targets.currentQuarter}, then always run /weekly-init ${targets.currentWeek}.`,
-    "Use these concrete targets when a boundary check fires:",
+    "Evaluate these boundary conditions before writing today's briefing, and run a boundary command only when both its date condition and missing-artifact condition are true.",
+    "- Weekly close/digest date condition: current ISO week is after the target week, so catch-up runs later in the week are eligible.",
+    "- Monthly pulse date condition: current month is after the target month, so catch-up runs after the first day are eligible.",
+    "- Quarter review/plan date condition: current quarter is after the review target and the current quarter has begun, so catch-up runs after the first day are eligible.",
+    "Do not run a future-period boundary command even if its artifact is missing.",
+    `Execution order for eligible missing artifacts: /weekly-review ${targets.lastWeek}, /ai-weekly-digest ${targets.lastWeek}, /quarterly-plan pulse ${targets.lastMonth}, /quarterly-plan review ${targets.lastQuarter}, /quarterly-plan init ${targets.currentQuarter}, then always run /weekly-init ${targets.currentWeek}.`,
+    "Use these concrete targets when a boundary check is date-eligible and its artifact is missing:",
     `- Last week review: /weekly-review ${targets.lastWeek}`,
     `- Last week AI digest: /ai-weekly-digest ${targets.lastWeek}`,
     `- Last month pulse: /quarterly-plan pulse ${targets.lastMonth}`,
@@ -438,14 +443,17 @@ function getDailyPreviewRunNotes(
   },
 ): string[] {
   const notes: string[] = [];
-  notes.push("Pre-flight checks missing weekly, monthly, and quarterly boundary artifacts using the concrete targets in the prompt.");
-  if (date.getDay() === 1) {
+  const weeklyBoundaryDay = date.getDay() === 1;
+  const monthlyBoundaryDay = date.getDate() === 1;
+  const quarterlyBoundaryDay = monthlyBoundaryDay && [0, 3, 6, 9].includes(date.getMonth());
+  notes.push("Pre-flight may catch up missing prior-period artifacts after a week, month, or quarter boundary has passed.");
+  if (weeklyBoundaryDay) {
     notes.push(`Pre-flight may close last week: /weekly-review ${targets.lastWeek}, then /ai-weekly-digest ${targets.lastWeek}.`);
   }
-  if (date.getDate() === 1) {
+  if (monthlyBoundaryDay) {
     notes.push(`Pre-flight may close last month: /quarterly-plan pulse ${targets.lastMonth}.`);
   }
-  if (date.getDate() === 1 && [0, 3, 6, 9].includes(date.getMonth())) {
+  if (quarterlyBoundaryDay) {
     notes.push(`Pre-flight may close/open quarter boundaries: /quarterly-plan review ${targets.lastQuarter}, then /quarterly-plan init ${targets.currentQuarter}.`);
   }
   notes.push(`Always opens target week with /weekly-init ${targets.currentWeek} before writing today's briefing.`);

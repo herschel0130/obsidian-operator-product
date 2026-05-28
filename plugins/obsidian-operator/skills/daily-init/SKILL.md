@@ -35,7 +35,7 @@ Determine last week's ISO week number. Check whether `01_Execution/YYYY-[W]WW/We
 - If it does **not** exist and today is in a **different ISO week** from the most recent daily note → run `/weekly-review` for last week first, wait for it to complete, then continue.
 - If it already exists → skip.
 
-This fires on the first `/daily-init` of a new week, regardless of which day that is.
+This fires on the first `/daily-init` of a new week, regardless of which day that is. The date condition is that the current ISO week is after the target week, so catch-up runs later in the week are eligible when the review artifact is still missing.
 
 ### 1b. AI Weekly Digest (new-week boundary)
 After step 1, check whether `04_Knowledge/AI-Weekly/YYYY-[W]WW - AI Weekly Digest.md` exists for **last week**.
@@ -47,7 +47,7 @@ Check whether `00_Strategy/YYYY-QX/Monthly Pulse - MM.md` exists for **last mont
 - If it does **not** exist and today's month differs from last month → run `/quarterly-plan pulse` for last month, wait for completion.
 - If it already exists → skip.
 
-This fires on the first `/daily-init` of a new month, regardless of which day that is.
+This fires on the first `/daily-init` of a new month, regardless of which day that is. The date condition is that the current month is after the target month, so catch-up runs after the first day are eligible when the pulse artifact is still missing.
 
 **This trigger is NON-NEGOTIABLE.** When the condition fires, run the skill — do NOT flag-and-skip just because the downstream skill might involve secondary interactive sub-steps. The quarterly-plan skill's Step 5 (calendar/reminder creation) explicitly skips itself in auto-mode, so the auto-trigger will complete without any user prompts. If you find yourself reasoning "I'll just flag this for the user to run later," stop — that reasoning is the regression that caused the April 2026 pulse to be missed for 2 consecutive days. Run the skill.
 
@@ -56,7 +56,7 @@ Check whether today's quarter differs from last quarter. If so, check whether `0
 - If it does **not** exist → run `/quarterly-plan review` for last quarter, wait for completion.
 - If it already exists → skip.
 
-This fires on the first `/daily-init` of a new quarter, regardless of which day that is.
+This fires on the first `/daily-init` of a new quarter, regardless of which day that is. The date condition is that the current quarter is after the review target, so catch-up runs after the first day are eligible when the review artifact is still missing.
 
 ### 1e. Open new quarter (new-quarter boundary)
 Same trigger as 1d. Check whether `00_Strategy/YYYY-QX/Quarterly Plan.md` exists for the **current quarter**.
