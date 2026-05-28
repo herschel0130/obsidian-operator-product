@@ -49,6 +49,7 @@ import {
   resolveAnnualYearInput,
   resolveAvailableHoursInput,
   resolveEditedPreviewSpec,
+  resolveQuarterlyPeriodInput,
   type OperatorWorkflowRunSpec,
 } from "./workflows";
 
@@ -758,6 +759,7 @@ class OperatorDashboardView extends ItemView {
 
     const strategy = createWorkflowCard(grid, "Strategy review", "Annual vision/review, quarterly plans, monthly pulses, and quarter reviews stay one click away.");
     const annualYearInput = createInlineInput(strategy, "Year", "YYYY", String(new Date().getFullYear()));
+    const strategyPeriodInput = createInlineInput(strategy, "Period", "2026-Q2 or 2026-04");
     createButton(strategy, "compass", "Annual vision", () => {
       const year = resolveAnnualYearInput(annualYearInput.value);
       annualYearInput.value = year;
@@ -769,13 +771,13 @@ class OperatorDashboardView extends ItemView {
       void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("annual-vision", `review ${year}`));
     }, undefined, !canRun);
     createButton(strategy, "milestone", "Quarter plan", () => {
-      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("quarterly-plan", "init"));
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("quarterly-plan", resolveQuarterlyPeriodInput("init", strategyPeriodInput.value)));
     }, undefined, !canRun);
     createButton(strategy, "activity", "Monthly pulse", () => {
-      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("quarterly-plan", "pulse"));
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("quarterly-plan", resolveQuarterlyPeriodInput("pulse", strategyPeriodInput.value)));
     }, undefined, !canRun);
     createButton(strategy, "history", "Quarter review", () => {
-      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("quarterly-plan", "review"));
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("quarterly-plan", resolveQuarterlyPeriodInput("review", strategyPeriodInput.value)));
     }, undefined, !canRun);
 
     const project = createWorkflowCard(grid, "Work on project", "Create structure natively, or run agent workflows when context needs synthesis.");
