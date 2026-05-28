@@ -45,6 +45,7 @@ import {
   describePrompt,
   normalizeDailyHours,
   resolveAdvancedPrompt,
+  resolveAnnualYearInput,
   resolveAvailableHoursInput,
   type OperatorWorkflowRunSpec,
 } from "./workflows";
@@ -731,11 +732,16 @@ class OperatorDashboardView extends ItemView {
     }, undefined, !canRun);
 
     const strategy = createWorkflowCard(grid, "Strategy review", "Annual vision/review, quarterly plans, monthly pulses, and quarter reviews stay one click away.");
+    const annualYearInput = createInlineInput(strategy, "Year", "YYYY", String(new Date().getFullYear()));
     createButton(strategy, "compass", "Annual vision", () => {
-      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("annual-vision"));
+      const year = resolveAnnualYearInput(annualYearInput.value);
+      annualYearInput.value = year;
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("annual-vision", year));
     }, undefined, !canRun);
     createButton(strategy, "book-open-check", "Annual review", () => {
-      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("annual-vision", "review"));
+      const year = resolveAnnualYearInput(annualYearInput.value);
+      annualYearInput.value = year;
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("annual-vision", `review ${year}`));
     }, undefined, !canRun);
     createButton(strategy, "milestone", "Quarter plan", () => {
       void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("quarterly-plan", "init"));

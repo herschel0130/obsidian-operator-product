@@ -95,6 +95,14 @@ export function resolveAvailableHoursInput(value: string, fallbackHours: number)
   return normalizeDailyHours(parsed);
 }
 
+export function resolveAnnualYearInput(value: string, date = new Date()): string {
+  const trimmed = value.trim();
+  if (/^20\d{2}$/.test(trimmed)) {
+    return trimmed;
+  }
+  return String(date.getFullYear());
+}
+
 export function buildWorkflowSpec(
   id: OperatorWorkflowId,
   args = "",
