@@ -456,6 +456,10 @@ test("builds editable workflow prompt specs", () => {
   assert.deepEqual(buildWorkflowSpec("annual-vision", "review", date).writeAreas, ["00_Strategy/2025 Annual Review.md"]);
   assert.deepEqual(buildWorkflowSpec("annual-vision", "review", date).targetNotes, ["Annual review target: 2025"]);
   assert.equal(buildWorkflowSpec("annual-vision", "review 2026", date).expectedOpenPath, "00_Strategy/2026 Annual Review.md");
+  assert.equal(describePrompt("/annual-vision next", date).expectedOpenPath, "00_Strategy/2027 Vision.md");
+  assert.match(describePrompt("/annual-vision next", date).prompt, /^\/annual-vision 2027\n\nOperator run metadata/);
+  assert.equal(describePrompt("/annual-vision review next", date).expectedOpenPath, "00_Strategy/2027 Annual Review.md");
+  assert.match(describePrompt("/annual-vision review next", date).prompt, /^\/annual-vision review 2027\n\nOperator run metadata/);
   assert.equal(buildWorkflowSpec("quarterly-plan", "init", date).expectedOpenPath, "00_Strategy/2026-Q2/Quarterly Plan.md");
   assert.equal(buildWorkflowSpec("quarterly-plan", "init", date).label, "Quarter plan 2026-Q2");
   assert.deepEqual(buildWorkflowSpec("quarterly-plan", "init", date).writeAreas, ["00_Strategy/2026-Q2/Quarterly Plan.md"]);

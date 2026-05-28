@@ -522,6 +522,11 @@ function normalizeKnownPromptForRun(command: OperatorWorkflowId, prompt: string,
     return normalizedArgs === commandArgs ? prompt : withArgs(`/${command}`, normalizedArgs);
   }
 
+  if (command === "annual-vision") {
+    const normalizedArgs = normalizeAnnualTargetArgs(commandArgs, date);
+    return normalizedArgs === commandArgs ? prompt : withArgs(`/${command}`, normalizedArgs);
+  }
+
   if (command !== "quarterly-plan") {
     return prompt;
   }
@@ -538,6 +543,14 @@ function normalizeIsoWeekReferences(value: string): string {
   return value.replace(/\b(20\d{2})-W(0?[1-9]|[1-4]\d|5[0-3])\b/gi, (_match, year: string, week: string) => {
     return `${year}-W${week.padStart(2, "0")}`;
   });
+}
+
+function normalizeAnnualTargetArgs(args: string, date: Date): string {
+  if (!/\b(last|next)\b/i.test(args) || /\b20\d{2}\b/.test(args)) {
+    return args;
+  }
+
+  return getAnnualPromptArgs(args, date);
 }
 
 function parseExplicitIsoWeek(value: string): string | null {
