@@ -15,7 +15,7 @@ import {
   WorkspaceLeaf,
   setIcon,
 } from "obsidian";
-import { formatDateKey, getIsoWeekInfo, getQuarterInfo, hasLocalDateChanged } from "./dates";
+import { formatDashboardRunContext, formatDateKey, getLocalMinuteKey, hasLocalDateChanged, hasLocalMinuteChanged } from "./dates";
 import { buildCliHandoff } from "./cli-handoff";
 import { appendQuickCapture, readOperatorHomeState, updateMarkdownTaskState, type OperatorHomeState } from "./home-state";
 import { createNativeProject, normalizeProjectName, type NativeProjectInput } from "./projects";
@@ -64,10 +64,11 @@ export default class OperatorControlPlugin extends Plugin {
   activeRun: RunningProcess | null = null;
   activeRunBuffer: OperatorRunRecord | null = null;
   private renderedDateKey = formatDateKey(new Date());
+  private renderedMinuteKey = getLocalMinuteKey(new Date());
 
   async onload(): Promise<void> {
     await this.loadSettings();
-    this.registerInterval(window.setInterval(() => this.refreshViewsAfterDateRollover(), 60_000));
+    this.registerInterval(window.setInterval(() => this.refreshViewsAfterClockTick(), 60_000));
 
     this.registerView(VIEW_TYPE_OPERATOR, (leaf) => new OperatorDashboardView(leaf, this));
 
@@ -393,7 +394,9 @@ export default class OperatorControlPlugin extends Plugin {
   }
 
   renderViews(): void {
-    this.renderedDateKey = formatDateKey(new Date());
+    const now = new Date();
+    this.renderedDateKey = formatDateKey(now);
+    this.renderedMinuteKey = getLocalMinuteKey(now);
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_OPERATOR)) {
       const view = leaf.view;
       if (view instanceof OperatorDashboardView) {
@@ -402,12 +405,26 @@ export default class OperatorControlPlugin extends Plugin {
     }
   }
 
-  private refreshViewsAfterDateRollover(): void {
-    if (!hasLocalDateChanged(this.renderedDateKey)) {
+  private refreshViewsAfterClockTick(): void {
+    const now = new Date();
+    if (hasLocalDateChanged(this.renderedDateKey, now)) {
+      this.renderedDateKey = formatDateKey(now);
+      this.renderedMinuteKey = getLocalMinuteKey(now);
+      this.renderViews();
       return;
     }
-    this.renderedDateKey = formatDateKey(new Date());
-    this.renderViews();
+
+    if (!hasLocalMinuteChanged(this.renderedMinuteKey, now)) {
+      return;
+    }
+
+    this.renderedMinuteKey = getLocalMinuteKey(now);
+    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_OPERATOR)) {
+      const view = leaf.view;
+      if (view instanceof OperatorDashboardView) {
+        view.updateHeaderClock(now);
+      }
+    }
   }
 }
 
@@ -449,12 +466,16 @@ class OperatorDashboardView extends ItemView {
     const titleWrap = header.createDiv();
     titleWrap.createEl("p", { cls: "operator-eyebrow", text: "Operator" });
     titleWrap.createEl("h2", { text: "Today in your vault" });
-    titleWrap.createEl("p", {
+    const headerMeta = titleWrap.createEl("p", {
       cls: "operator-muted",
       text: status.vault.ready
-        ? `${formatHeaderRunContext(new Date())} · ${home.dailyNotePath}`
+        ? `${formatDashboardRunContext(new Date())} · ${home.dailyNotePath}`
         : "Initialize the Markdown structure once, then use the vault itself as the interface.",
     });
+    if (status.vault.ready) {
+      headerMeta.addClass("operator-clock-meta");
+      headerMeta.setAttr("data-daily-note-path", home.dailyNotePath);
+    }
 
     const headerActions = header.createDiv({ cls: "operator-hero-actions" });
     createButton(headerActions, "refresh-cw", "Refresh", () => void this.plugin.refreshStatus());
@@ -922,6 +943,15 @@ class OperatorDashboardView extends ItemView {
     }
     return canRunBackendWorkflows(status, this.plugin.settings.backend);
   }
+
+  updateHeaderClock(date: Date): void {
+    const headerMeta = this.contentEl.querySelector<HTMLElement>(".operator-clock-meta");
+    const dailyNotePath = headerMeta?.getAttr("data-daily-note-path");
+    if (!headerMeta || !dailyNotePath) {
+      return;
+    }
+    headerMeta.setText(`${formatDashboardRunContext(date)} · ${dailyNotePath}`);
+  }
 }
 
 class OperatorSettingTab extends PluginSettingTab {
@@ -1240,15 +1270,6 @@ function requireInput(input: HTMLInputElement | HTMLTextAreaElement, label: stri
   input.focus();
   new Notice(`Enter ${label} first.`);
   return null;
-}
-
-function formatHeaderRunContext(date: Date): string {
-  const time = [
-    String(date.getHours()).padStart(2, "0"),
-    String(date.getMinutes()).padStart(2, "0"),
-  ].join(":");
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "local";
-  return `${formatDateKey(date)} ${time} ${timezone} · ${getIsoWeekInfo(date).label} · ${getQuarterInfo(date).label}`;
 }
 
 async function copyTextToClipboard(value: string, successMessage: string): Promise<void> {

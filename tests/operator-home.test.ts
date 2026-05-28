@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import test from "node:test";
-import { formatRunContext, getDailyNotePath, getExecutionWeekFolder, getIsoWeekInfo, getQuarterInfo, hasLocalDateChanged } from "../src/dates";
+import { formatDashboardRunContext, formatRunContext, getDailyNotePath, getExecutionWeekFolder, getIsoWeekInfo, getLocalMinuteKey, getQuarterInfo, hasLocalDateChanged, hasLocalMinuteChanged } from "../src/dates";
 import { appendQuickCapture, readOperatorHomeState, updateMarkdownTaskState } from "../src/home-state";
 import { buildCliHandoff } from "../src/cli-handoff";
 import { buildProjectNote, createNativeProject, normalizeProjectName } from "../src/projects";
@@ -20,6 +20,9 @@ test("computes ISO week folders and daily note paths", () => {
   assert.equal(getDailyNotePath(date), "01_Execution/2026-W01/2026-01-01.md");
   assert.equal(hasLocalDateChanged("2026-05-22", new Date("2026-05-22T23:59:00")), false);
   assert.equal(hasLocalDateChanged("2026-05-22", new Date("2026-05-23T00:01:00")), true);
+  assert.equal(getLocalMinuteKey(new Date("2026-05-22T09:15:30")), "2026-05-22T09:15");
+  assert.equal(hasLocalMinuteChanged("2026-05-22T09:15", new Date("2026-05-22T09:15:59")), false);
+  assert.equal(hasLocalMinuteChanged("2026-05-22T09:15", new Date("2026-05-22T09:16:00")), true);
 });
 
 test("formats run completion notices with expected-note status", () => {
@@ -57,6 +60,7 @@ test("formats run context for agent prompts with local clock and planning period
   assert.match(formatRunContext(date), /Local date: 2026-05-22/);
   assert.match(formatRunContext(date), /ISO week: 2026-W21/);
   assert.match(formatRunContext(date), /Quarter: 2026-Q2/);
+  assert.match(formatDashboardRunContext(date), /^2026-05-22 09:15 .+ · 2026-W21 · 2026-Q2$/);
 });
 
 test("parses active project notes from frontmatter and ## Now", () => {
