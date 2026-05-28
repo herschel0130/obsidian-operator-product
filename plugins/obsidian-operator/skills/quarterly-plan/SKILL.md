@@ -8,8 +8,8 @@ Strategic quarterly planning: init, review, and monthly pulse checkpoint.
 ## Arguments
 
 - `pulse [YYYY-QX|YYYY-MM|MM]` — Run monthly pulse for the target month (default: last month). If a quarter is supplied, target that quarter's final month. Auto-triggered by `/daily-init` on 1st of each month.
-- `init [YYYY-QX]` — Initialize a new quarter's plan. Auto-triggered by `/daily-init` on first Monday of quarter.
-- `review [YYYY-QX]` — Review a completed quarter. Auto-triggered by `/daily-init` on first Monday of new quarter.
+- `init [YYYY-QX]` — Initialize a new quarter's plan. Auto-triggered by `/daily-init` after a new quarter begins when the current quarter plan is missing.
+- `review [YYYY-QX]` — Review a completed quarter. Auto-triggered by `/daily-init` after a new quarter begins when the previous quarter review is missing.
 
 If no argument given, auto-detect mode:
 - If current quarter has no `Quarterly Plan.md` → init

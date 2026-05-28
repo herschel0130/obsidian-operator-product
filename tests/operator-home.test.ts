@@ -113,6 +113,9 @@ test("quarterly-plan skill documents explicit UI targets", () => {
   assert.match(skill, /Pulse Mode[\s\S]*If the prompt includes `pulse YYYY-MM`/);
   assert.match(skill, /Init Mode[\s\S]*If the prompt includes `init YYYY-QX`/);
   assert.match(skill, /Review Mode[\s\S]*If the prompt includes `review YYYY-QX`/);
+  assert.match(skill, /Auto-triggered by `\/daily-init` after a new quarter begins/);
+  assert.doesNotMatch(skill, /first Monday of quarter/);
+  assert.doesNotMatch(skill, /first Monday of new quarter/);
 });
 
 test("annual-vision skill documents explicit UI targets", () => {
