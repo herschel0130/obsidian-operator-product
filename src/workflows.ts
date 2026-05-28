@@ -161,7 +161,7 @@ export function buildWorkflowSpec(
         "Project note, existing deadline plan, calendar/reminder context when available",
       ], ["Project Deadline Plan.md and related reminders"], date);
     case "quarterly-plan":
-      return simpleSpec(id, "Quarterly planning", withArgs("/quarterly-plan", getQuarterlyPromptArgs(cleanedArgs, date)), [
+      return simpleSpec(id, getQuarterlyWorkflowLabel(cleanedArgs, date), withArgs("/quarterly-plan", getQuarterlyPromptArgs(cleanedArgs, date)), [
         "Annual vision, quarterly plans/reviews, weekly reviews, active projects, horizon items",
       ], ["00_Strategy/YYYY-QX/ planning, review, or monthly pulse notes"], date, getQuarterlyExpectedPath(cleanedArgs, date), [
         getQuarterlyTargetNote(cleanedArgs, date),
@@ -444,6 +444,20 @@ function getQuarterlyTargetNote(args: string, date: Date): string {
   }
   const quarter = parseQuarterArg(args) ?? getQuarterInfo(date);
   return `Quarterly plan target: ${quarter.label}`;
+}
+
+function getQuarterlyWorkflowLabel(args: string, date: Date): string {
+  const mode = args.split(/\s+/, 1)[0].toLowerCase();
+  if (mode === "review") {
+    const quarter = parseQuarterArg(args) ?? getPreviousQuarter(date);
+    return `Quarter review ${quarter.label}`;
+  }
+  if (mode === "pulse") {
+    const target = parsePulseMonth(args, date);
+    return `Monthly pulse ${target.year}-${String(target.month).padStart(2, "0")}`;
+  }
+  const quarter = parseQuarterArg(args) ?? getQuarterInfo(date);
+  return `Quarter plan ${quarter.label}`;
 }
 
 function getQuarterlyPromptArgs(args: string, date: Date): string {
