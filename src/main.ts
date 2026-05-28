@@ -20,6 +20,7 @@ import { formatDashboardRunContext, formatDateKey, getLocalMinuteKey, hasLocalDa
 import { buildCliHandoff } from "./cli-handoff";
 import { appendQuickCapture, readOperatorHomeState, updateMarkdownTaskState, type OperatorHomeState } from "./home-state";
 import { createNativeProject, normalizeProjectName, type NativeProjectInput } from "./projects";
+import { attachActiveRunAndRender } from "./run-lifecycle";
 import {
   buildBackendCommand,
   buildCodexMarketplaceAddCommand,
@@ -187,13 +188,12 @@ export default class OperatorControlPlugin extends Plugin {
     };
     this.settings.lastRun = this.activeRunBuffer;
     await this.saveSettings();
-    this.renderViews();
 
     const running = runCommand(spec, {
       onStdout: (chunk) => this.appendActiveOutput("stdout", chunk),
       onStderr: (chunk) => this.appendActiveOutput("stderr", chunk),
     });
-    this.activeRun = running;
+    attachActiveRunAndRender(this, running);
 
     const result = await running.done;
     await this.finishActiveRun(result.exitCode === 0 ? "success" : "failed", result);
@@ -317,13 +317,12 @@ export default class OperatorControlPlugin extends Plugin {
     };
     this.settings.lastRun = this.activeRunBuffer;
     await this.saveSettings();
-    this.renderViews();
 
     const running = runCommand(spec, {
       onStdout: (chunk) => this.appendActiveOutput("stdout", chunk),
       onStderr: (chunk) => this.appendActiveOutput("stderr", chunk),
     });
-    this.activeRun = running;
+    attachActiveRunAndRender(this, running);
 
     const result = await running.done;
     const statusName = result.cancelled ? "cancelled" : result.exitCode === 0 ? "success" : "failed";
