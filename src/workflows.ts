@@ -85,7 +85,9 @@ export function buildWeeklyPeriodPlaceholder(date = new Date()): string {
 
 export function buildStrategyPeriodPlaceholder(date = new Date()): string {
   const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-  return `${getQuarterInfo(date).label} or ${month}`;
+  const previousMonth = new Date(date.getFullYear(), date.getMonth() - 1, 1);
+  const blankPulseMonth = `${previousMonth.getFullYear()}-${String(previousMonth.getMonth() + 1).padStart(2, "0")}`;
+  return `${getQuarterInfo(date).label}, ${month}; blank pulse = ${blankPulseMonth}`;
 }
 
 export function resolveAdvancedPrompt(prompt: string, availableHours: number): string {

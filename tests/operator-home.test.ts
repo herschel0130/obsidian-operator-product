@@ -110,7 +110,7 @@ test("builds date-aware workflow input placeholders", () => {
   const source = readFileSync("src/main.ts", "utf8");
 
   assert.equal(buildWeeklyPeriodPlaceholder(date), "2026-W22; review accepts last");
-  assert.equal(buildStrategyPeriodPlaceholder(date), "2026-Q2 or 2026-05");
+  assert.equal(buildStrategyPeriodPlaceholder(date), "2026-Q2, 2026-05; blank pulse = 2026-04");
   assert.match(source, /const renderDate = new Date\(\);[\s\S]*readOperatorHomeState\(this\.app, renderDate\)/);
   assert.match(source, /formatDashboardRunContext\(renderDate\)/);
   assert.match(source, /this\.renderWorkflowShortcuts\(root, status, home, renderDate\)/);
