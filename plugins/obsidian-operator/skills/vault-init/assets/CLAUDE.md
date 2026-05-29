@@ -36,10 +36,10 @@ It is not a software development project; there are no build systems, test runne
   [Project]/            — project-specific knowledge
     Meeting Knowledge/  — meeting synthesis notes (created by /meeting)
     Research/           — deep research reports (created by /deep-research)
-  GitHub/               — daily trending repo reports (created by /daily-github)
-  Academic/             — daily arXiv paper reports (created by /daily-academic)
-  AI-Weekly/            — weekly AI landscape digests (created by /ai-weekly-digest)
-05_Content/             — content backlog, drafts, published, and archived items
+  GitHub/               — optional GitHub trend reports (created by /daily-github)
+  Academic/             — optional arXiv paper reports (created by /daily-academic)
+  AI-Weekly/            — optional AI landscape digests (created by /ai-weekly-digest)
+05_Content/             — optional content backlog, drafts, published, and archived items
   Backlog.md            — master content idea queue with pillar tags, priority-sorted by origin (P1 thinking/daily > P2 meeting > P3 newsletter/github/ai-weekly)
   Voice Guide.md        — per-format voice profiles for /content-draft
   Drafts/               — work-in-progress drafts (created by /content-draft)
@@ -113,7 +113,7 @@ Update these values to match your setup. Skills reference them as "the vault own
 
 | Setting | Value | Used by |
 |---------|-------|---------|
-| Vault owner name | `Yuhan` | `/meeting`, `/daily-init` |
+| Vault owner name | `You` | `/meeting`, `/daily-init` |
 | Apple Calendar name | `Operator` | `/deadline-plan`, `/quarterly-plan` |
 | Apple Reminders list | `Operator` | `/deadline-plan`, `/quarterly-plan` |
 | Meeting recordings base | `~/Work/<Project>/Meetings/` | `/meeting` |

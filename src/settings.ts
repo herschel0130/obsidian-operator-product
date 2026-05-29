@@ -1,11 +1,19 @@
 export type OperatorBackend = "codex" | "claude";
 
+export interface OptionalModuleSettings {
+  intelligence: boolean;
+  academic: boolean;
+  content: boolean;
+  calendarEvents: boolean;
+}
+
 export interface OperatorSettings {
   backend: OperatorBackend;
   codexPath: string;
   claudePath: string;
   repoSource: string;
   availableHours: number;
+  optionalModules: OptionalModuleSettings;
   vaultOwnerName: string;
   calendarName: string;
   remindersList: string;
@@ -38,6 +46,12 @@ export const DEFAULT_SETTINGS: OperatorSettings = {
   claudePath: "claude",
   repoSource: "herschel0130/obsidian-operator-product",
   availableHours: 6,
+  optionalModules: {
+    intelligence: false,
+    academic: false,
+    content: false,
+    calendarEvents: false,
+  },
   vaultOwnerName: "You",
   calendarName: "Operator",
   remindersList: "Operator",

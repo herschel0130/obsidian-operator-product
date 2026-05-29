@@ -15,9 +15,13 @@ import {
   WorkspaceLeaf,
   setIcon,
 } from "obsidian";
-import { formatDateKey } from "./dates";
-import { appendQuickCapture, readOperatorHomeState, type OperatorHomeState } from "./home-state";
+import { clearInputAfterSuccessfulCapture } from "./capture-ui";
+import { startAlignedMinuteRefresh } from "./clock-refresh";
+import { formatDashboardRunContext, formatDateKey, getLocalMinuteKey, hasLocalDateChanged, hasLocalMinuteChanged } from "./dates";
+import { buildCliHandoff } from "./cli-handoff";
+import { appendQuickCapture, readOperatorHomeState, updateMarkdownTaskState, type OperatorHomeState } from "./home-state";
 import { createNativeProject, normalizeProjectName, type NativeProjectInput } from "./projects";
+import { attachActiveRunAndRender } from "./run-lifecycle";
 import {
   buildBackendCommand,
   buildCodexMarketplaceAddCommand,
@@ -26,19 +30,37 @@ import {
   truncateOutput,
   type RunningProcess,
 } from "./runner";
+import { formatExpectedNoteStatus, formatRunCompletionNotice } from "./run-notices";
 import { DEFAULT_SETTINGS, type OperatorRunRecord, type OperatorSettings } from "./settings";
 import {
   canRunBackendWorkflows,
   checkEnvironment,
+  formatWorkflowUnavailableHelp,
   getBackendReadiness,
+  getFreshBackendReadinessForRun,
+  getFreshWorkflowLaunchGate,
   type OperatorEnvironmentStatus,
   type StatusState,
 } from "./status";
+import { buildTodayScheduleLines } from "./today-surface";
+import type { MarkdownActionItem } from "./vault-parsers";
 import { initializeVault, type VaultInitializationResult } from "./vault-init";
 import {
+  buildAdvancedPromptPlaceholder,
+  buildDefaultDailyPrompt,
+  buildStrategyPeriodPlaceholder,
   buildStartDaySpec,
+  buildWeeklyPeriodPlaceholder,
   buildWorkflowSpec,
   describePrompt,
+  normalizeDailyHours,
+  resolveAdvancedPrompt,
+  resolveAnnualShortcutInput,
+  resolveAnnualYearInput,
+  resolveAvailableHoursInput,
+  resolveEditedPreviewSpec,
+  resolveQuarterlyPeriodInput,
+  resolveWeeklyPeriodInput,
   type OperatorWorkflowRunSpec,
 } from "./workflows";
 
@@ -53,9 +75,12 @@ export default class OperatorControlPlugin extends Plugin {
   status: OperatorEnvironmentStatus | null = null;
   activeRun: RunningProcess | null = null;
   activeRunBuffer: OperatorRunRecord | null = null;
+  private renderedDateKey = formatDateKey(new Date());
+  private renderedMinuteKey = getLocalMinuteKey(new Date());
 
   async onload(): Promise<void> {
     await this.loadSettings();
+    this.startClockRefresh();
 
     this.registerView(VIEW_TYPE_OPERATOR, (leaf) => new OperatorDashboardView(leaf, this));
 
@@ -93,11 +118,27 @@ export default class OperatorControlPlugin extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    this.settings = { ...DEFAULT_SETTINGS, ...(await this.loadData()) };
+    const loaded = (await this.loadData()) as Partial<OperatorSettings> | null;
+    this.settings = {
+      ...DEFAULT_SETTINGS,
+      ...loaded,
+      optionalModules: {
+        ...DEFAULT_SETTINGS.optionalModules,
+        ...(loaded?.optionalModules ?? {}),
+      },
+    };
   }
 
   async saveSettings(): Promise<void> {
     await this.saveData(this.settings);
+  }
+
+  private startClockRefresh(): void {
+    this.register(startAlignedMinuteRefresh(() => this.refreshViewsAfterClockTick(), {
+      now: () => new Date(),
+      setTimeout: (callback, delayMs) => window.setTimeout(callback, delayMs),
+      clearTimeout: (handle) => window.clearTimeout(handle),
+    }));
   }
 
   async activateView(): Promise<void> {
@@ -107,9 +148,11 @@ export default class OperatorControlPlugin extends Plugin {
     this.app.workspace.revealLeaf(leaf);
   }
 
-  async refreshStatus(): Promise<OperatorEnvironmentStatus> {
+  async refreshStatus(options: { render: boolean } = { render: true }): Promise<OperatorEnvironmentStatus> {
     this.status = await checkEnvironment(this.app, this.settings);
-    this.renderViews();
+    if (options.render) {
+      this.renderViews();
+    }
     return this.status;
   }
 
@@ -159,13 +202,12 @@ export default class OperatorControlPlugin extends Plugin {
     };
     this.settings.lastRun = this.activeRunBuffer;
     await this.saveSettings();
-    this.renderViews();
 
     const running = runCommand(spec, {
       onStdout: (chunk) => this.appendActiveOutput("stdout", chunk),
       onStderr: (chunk) => this.appendActiveOutput("stderr", chunk),
     });
-    this.activeRun = running;
+    attachActiveRunAndRender(this, running);
 
     const result = await running.done;
     await this.finishActiveRun(result.exitCode === 0 ? "success" : "failed", result);
@@ -173,10 +215,10 @@ export default class OperatorControlPlugin extends Plugin {
   }
 
   async runDailyBriefing(hours: number, manualItems = ""): Promise<void> {
-    const safeHours = Math.max(1, Math.min(16, Math.round(hours || this.settings.availableHours)));
+    const safeHours = normalizeDailyHours(hours || this.settings.availableHours);
     this.settings.availableHours = safeHours;
     await this.saveSettings();
-    await this.previewAndRunWorkflow(buildStartDaySpec(safeHours, manualItems));
+    await this.previewAndRunWorkflow(buildStartDaySpec(safeHours, manualItems, new Date(), this.settings.optionalModules));
   }
 
   async runProjectInit(projectName: string): Promise<void> {
@@ -202,13 +244,32 @@ export default class OperatorControlPlugin extends Plugin {
       new Notice(`Project created at ${result.notePath}.`);
       await this.openVaultPath(result.notePath);
       await this.refreshStatus();
-      this.renderViews();
     } catch (error) {
       new Notice(`Project setup failed: ${formatError(error)}`);
     }
   }
 
+  async updateTaskFromUi(path: string, item: MarkdownActionItem, marker: " " | "x" | ">"): Promise<void> {
+    try {
+      await updateMarkdownTaskState(this.app, path, item.raw, marker);
+      new Notice(marker === "x" ? "Task marked done." : marker === ">" ? "Task carried forward." : "Task reopened.");
+      this.renderViews();
+    } catch (error) {
+      new Notice(`Task update failed: ${formatError(error)}`);
+    }
+  }
+
   async previewAndRunWorkflow(spec: OperatorWorkflowRunSpec): Promise<void> {
+    const gate = await getFreshWorkflowLaunchGate(
+      () => this.refreshStatus(),
+      this.settings.backend,
+      spec.label,
+    );
+    if (!gate.ready) {
+      new Notice(gate.noticeText);
+      return;
+    }
+
     const confirmed = await this.confirmRunPreview(spec);
     if (!confirmed) {
       return;
@@ -228,14 +289,17 @@ export default class OperatorControlPlugin extends Plugin {
       return;
     }
 
-    if (!(await this.ensureRunnerConsent())) {
+    const { status, readiness } = await getFreshBackendReadinessForRun(
+      () => this.refreshStatus(),
+      this.settings.backend,
+      this.status,
+    );
+    if (!readiness.ready) {
+      new Notice(`Finish setup first: ${readiness.helpText}`);
       return;
     }
 
-    const status = this.status ?? (await this.refreshStatus());
-    const readiness = getBackendReadiness(status, this.settings.backend);
-    if (!readiness.ready) {
-      new Notice(`Finish setup first: ${readiness.helpText}`);
+    if (!(await this.ensureRunnerConsent())) {
       return;
     }
 
@@ -266,13 +330,12 @@ export default class OperatorControlPlugin extends Plugin {
     };
     this.settings.lastRun = this.activeRunBuffer;
     await this.saveSettings();
-    this.renderViews();
 
     const running = runCommand(spec, {
       onStdout: (chunk) => this.appendActiveOutput("stdout", chunk),
       onStderr: (chunk) => this.appendActiveOutput("stderr", chunk),
     });
-    this.activeRun = running;
+    attachActiveRunAndRender(this, running);
 
     const result = await running.done;
     const statusName = result.cancelled ? "cancelled" : result.exitCode === 0 ? "success" : "failed";
@@ -280,13 +343,15 @@ export default class OperatorControlPlugin extends Plugin {
     await this.refreshStatus();
   }
 
-  async appendCapture(kind: "idea" | "task" | "meeting" | "research", text: string): Promise<void> {
+  async appendCapture(kind: "idea" | "task" | "meeting" | "research", text: string): Promise<boolean> {
     try {
       const path = await appendQuickCapture(this.app, kind, text);
       new Notice(`Captured to ${path}.`);
       this.renderViews();
+      return true;
     } catch (error) {
       new Notice(`Capture failed: ${formatError(error)}`);
+      return false;
     }
   }
 
@@ -334,14 +399,16 @@ export default class OperatorControlPlugin extends Plugin {
     this.activeRun = null;
     this.activeRunBuffer = null;
     await this.saveSettings();
+    let openedExpectedNote = false;
     if (status === "success" && this.settings.lastRun?.expectedOpenPath) {
       const file = this.app.vault.getAbstractFileByPath(this.settings.lastRun.expectedOpenPath);
       if (file instanceof TFile) {
         await this.app.workspace.getLeaf(false).openFile(file);
+        openedExpectedNote = true;
       }
     }
     this.renderViews();
-    new Notice(status === "success" ? "Operator run finished." : `Operator run ${status}.`);
+    new Notice(formatRunCompletionNotice(status, this.settings.lastRun?.expectedOpenPath, openedExpectedNote));
   }
 
   private async confirmRunPreview(spec: OperatorWorkflowRunSpec): Promise<OperatorWorkflowRunSpec | null> {
@@ -369,10 +436,35 @@ export default class OperatorControlPlugin extends Plugin {
   }
 
   renderViews(): void {
+    const now = new Date();
+    this.renderedDateKey = formatDateKey(now);
+    this.renderedMinuteKey = getLocalMinuteKey(now);
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_OPERATOR)) {
       const view = leaf.view;
       if (view instanceof OperatorDashboardView) {
         void view.render();
+      }
+    }
+  }
+
+  private refreshViewsAfterClockTick(): void {
+    const now = new Date();
+    if (hasLocalDateChanged(this.renderedDateKey, now)) {
+      this.renderedDateKey = formatDateKey(now);
+      this.renderedMinuteKey = getLocalMinuteKey(now);
+      this.renderViews();
+      return;
+    }
+
+    if (!hasLocalMinuteChanged(this.renderedMinuteKey, now)) {
+      return;
+    }
+
+    this.renderedMinuteKey = getLocalMinuteKey(now);
+    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_OPERATOR)) {
+      const view = leaf.view;
+      if (view instanceof OperatorDashboardView) {
+        view.updateHeaderClock(now);
       }
     }
   }
@@ -399,7 +491,7 @@ class OperatorDashboardView extends ItemView {
   }
 
   async onOpen(): Promise<void> {
-    await this.plugin.refreshStatus();
+    await this.plugin.refreshStatus({ render: false });
     await this.render();
   }
 
@@ -408,20 +500,25 @@ class OperatorDashboardView extends ItemView {
     container.empty();
     container.addClass("operator-control-view");
 
+    const renderDate = new Date();
     const status = this.plugin.status ?? (await this.plugin.refreshStatus());
-    const home = await readOperatorHomeState(this.app);
+    const home = await readOperatorHomeState(this.app, renderDate);
 
     const root = container.createDiv({ cls: "operator-control" });
     const header = root.createDiv({ cls: "operator-hero" });
     const titleWrap = header.createDiv();
     titleWrap.createEl("p", { cls: "operator-eyebrow", text: "Operator" });
     titleWrap.createEl("h2", { text: "Today in your vault" });
-    titleWrap.createEl("p", {
+    const headerMeta = titleWrap.createEl("p", {
       cls: "operator-muted",
       text: status.vault.ready
-        ? `${formatDateKey(new Date())} · ${home.dailyNotePath}`
+        ? `${formatDashboardRunContext(renderDate)} · ${home.dailyNotePath}`
         : "Initialize the Markdown structure once, then use the vault itself as the interface.",
     });
+    if (status.vault.ready) {
+      headerMeta.addClass("operator-clock-meta");
+      headerMeta.setAttr("data-daily-note-path", home.dailyNotePath);
+    }
 
     const headerActions = header.createDiv({ cls: "operator-hero-actions" });
     createButton(headerActions, "refresh-cw", "Refresh", () => void this.plugin.refreshStatus());
@@ -438,8 +535,8 @@ class OperatorDashboardView extends ItemView {
 
     this.renderToday(root, status, home);
     this.renderQuickCapture(root, home);
-    this.renderHomePanels(root, home);
-    this.renderWorkflowShortcuts(root, status, home);
+    this.renderHomePanels(root, status, home);
+    this.renderWorkflowShortcuts(root, status, home, renderDate);
     this.renderSetup(root, status, true);
     this.renderRunLog(root);
   }
@@ -486,7 +583,7 @@ class OperatorDashboardView extends ItemView {
 
   private renderSetup(root: HTMLElement, status: OperatorEnvironmentStatus, collapsed: boolean): void {
     const section = collapsed
-      ? createDisclosureSection(root, "Setup health", "Keep agent prerequisites visible without making setup the product.")
+      ? createDisclosureSection(root, "Setup health", "Selected backend readiness first; optional integrations are labeled optional.")
       : createSection(root, "Setup", "Make the hidden agent pieces visible before you run anything.");
     const grid = section.createDiv({ cls: "operator-status-grid" });
 
@@ -516,18 +613,25 @@ class OperatorDashboardView extends ItemView {
 
   private renderSetupControls(section: HTMLElement, status: OperatorEnvironmentStatus): void {
     const controls = section.createDiv({ cls: "operator-controls-row" });
+    const setupLockHelp = this.plugin.activeRun
+      ? "Operator is already running. Use Cancel run before changing setup."
+      : undefined;
     if (this.plugin.settings.backend === "codex") {
+      const codexSkillsDisabled = status.codexCli !== "ready" || !!this.plugin.activeRun;
+      const codexSkillsHelp = status.codexCli !== "ready"
+        ? "Set a working Codex executable before installing Codex skills."
+        : setupLockHelp;
       createButton(controls, "download", status.operatorSkills === "ready" || status.operatorSkills === "warning" ? "Update Codex skills" : "Install Codex skills", () => {
         void this.plugin.installOrUpdateCodexMarketplace();
-      }, undefined, status.codexCli !== "ready" || !!this.plugin.activeRun);
+      }, undefined, codexSkillsDisabled, codexSkillsHelp);
     } else {
       createButton(controls, "copy", "Copy Claude install", () => {
         void copyTextToClipboard(CLAUDE_INSTALL_COMMANDS, "Claude install commands copied.");
-      }, undefined, !!this.plugin.activeRun);
+      }, undefined, !!this.plugin.activeRun, setupLockHelp);
     }
     createButton(controls, "folder-check", status.vault.ready ? "Refresh vault setup" : "Initialize vault", () => {
       void this.plugin.initializeVaultFromUi();
-    }, "mod-cta", !!this.plugin.activeRun);
+    }, "mod-cta", !!this.plugin.activeRun, setupLockHelp);
   }
 
   private renderToday(root: HTMLElement, status: OperatorEnvironmentStatus, home: OperatorHomeState): void {
@@ -544,35 +648,48 @@ class OperatorDashboardView extends ItemView {
         type: "number",
         min: "1",
         max: "16",
-        step: "1",
+        step: "0.5",
         value: String(this.plugin.settings.availableHours),
       },
     });
     hoursInput.addEventListener("change", () => {
-      this.plugin.settings.availableHours = Number(hoursInput.value) || 6;
+      const resolvedHours = resolveAvailableHoursInput(hoursInput.value, this.plugin.settings.availableHours);
+      this.plugin.settings.availableHours = resolvedHours;
+      hoursInput.value = String(resolvedHours);
+      this.updateAdvancedPromptPlaceholders(resolvedHours);
       void this.plugin.saveSettings();
     });
 
     const manualWrap = row.createDiv({ cls: "operator-field operator-grow" });
     manualWrap.createEl("label", { text: "Manual items" });
-    const manualInput = manualWrap.createEl("input", {
+    const manualInput = manualWrap.createEl("textarea", {
+      cls: "operator-manual-input",
       attr: {
-        placeholder: "Optional: call Alice, review deck",
+        rows: "2",
+        placeholder: "Optional: one item per line",
       },
     });
 
     const canRun = this.canRun(status);
+    const lockHelp = canRun
+      ? undefined
+      : formatWorkflowUnavailableHelp(status, this.plugin.settings.backend, "Start my day", !!this.plugin.activeRun);
     createButton(row, "sun", "Start my day", () => {
-      void this.plugin.runDailyBriefing(Number(hoursInput.value) || this.plugin.settings.availableHours, manualInput.value);
-    }, "mod-cta", !canRun);
+      const resolvedHours = resolveAvailableHoursInput(hoursInput.value, this.plugin.settings.availableHours);
+      void this.plugin.runDailyBriefing(resolvedHours, manualInput.value);
+    }, "mod-cta", !canRun, lockHelp);
     createButton(row, "file-text", "Open today", () => void this.plugin.openVaultPath(home.dailyNotePath), undefined, !home.daily.exists);
     createButton(row, "list-checks", "Open week", () => void this.plugin.openVaultPath(home.weeklyTodoPath), undefined, !home.weeklyTodo.exists);
 
+    section.createEl("p", {
+      cls: "operator-help",
+      text: "Start my day keeps weekly, monthly, and quarterly planning current when needed.",
+    });
+
     if (!canRun) {
-      const readiness = getBackendReadiness(status, this.plugin.settings.backend);
       section.createEl("p", {
         cls: "operator-help",
-        text: `Daily briefing unlocks when setup is ready. ${readiness.helpText}`,
+        text: lockHelp,
       });
     }
 
@@ -583,26 +700,47 @@ class OperatorDashboardView extends ItemView {
 
     const tasks = grid.createDiv({ cls: "operator-note-panel" });
     tasks.createEl("h4", { text: "Next actions" });
-    const actions = [...home.daily.tasks, ...home.daily.carriedForward].slice(0, 8).map((item) => item.text);
-    renderTextList(tasks, actions, home.weeklyTodo.openTasks.length > 0
+    const actions = home.daily.tasks.slice(0, 8);
+    this.renderActionItems(tasks, actions, home.dailyNotePath, home.weeklyTodo.openTasks.length > 0
       ? "Today's note has no open tasks. Check the weekly list below."
       : "No open tasks found yet.");
 
     const schedule = grid.createDiv({ cls: "operator-note-panel" });
     schedule.createEl("h4", { text: "Schedule" });
-    const meetingsToday = home.blockers.meetings
-      .filter((meeting) => meeting.timing === "today")
-      .map((meeting) => meeting.dateIso ? `${meeting.dateIso} - ${meeting.text}` : meeting.text);
-    renderTextList(schedule, home.daily.schedule.length > 0 ? home.daily.schedule : meetingsToday, "No schedule lines or meetings for today.");
+    renderTextList(schedule, buildTodayScheduleLines(home.daily.schedule, home.blockers.meetings), "No schedule lines or meetings for today.");
 
     if (home.weeklyTodo.openTasks.length > 0) {
       const week = grid.createDiv({ cls: "operator-note-panel" });
       week.createEl("h4", { text: "Weekly queue" });
-      renderTextList(week, home.weeklyTodo.openTasks.map((item) => item.text).slice(0, 6), "Weekly Todo has no open tasks.");
+      this.renderActionItems(week, home.weeklyTodo.openTasks.slice(0, 6), home.weeklyTodoPath, "Weekly Todo has no open tasks.");
     }
   }
 
-  private renderHomePanels(root: HTMLElement, home: OperatorHomeState): void {
+  private renderActionItems(parent: HTMLElement, items: MarkdownActionItem[], sourcePath: string, emptyText: string): void {
+    if (items.length === 0) {
+      parent.createEl("p", { cls: "operator-muted", text: emptyText });
+      return;
+    }
+
+    const list = parent.createEl("ul", { cls: "operator-list" });
+    for (const item of items) {
+      const row = list.createEl("li");
+      row.createEl("span", { text: item.text });
+      const actions = row.createDiv({ cls: "operator-inline-actions" });
+      createButton(actions, "check", "Done", () => {
+        void this.plugin.updateTaskFromUi(sourcePath, item, "x");
+      });
+      createButton(actions, "corner-down-right", "Carry", () => {
+        void this.plugin.updateTaskFromUi(sourcePath, item, ">");
+      });
+    }
+  }
+
+  private renderHomePanels(root: HTMLElement, status: OperatorEnvironmentStatus, home: OperatorHomeState): void {
+    const canRun = this.canRun(status);
+    const lockHelp = canRun
+      ? undefined
+      : formatWorkflowUnavailableHelp(status, this.plugin.settings.backend, "Current Work", !!this.plugin.activeRun);
     const section = createSection(root, "Current Work", `${home.weekFolder} supplies project context, blockers, and meeting prep.`);
     const grid = section.createDiv({ cls: "operator-home-grid" });
 
@@ -622,7 +760,7 @@ class OperatorDashboardView extends ItemView {
         createButton(actions, "file-text", "Open", () => void this.plugin.openVaultPath(project.notePath));
         createButton(actions, "refresh-cw", "Sync", () => {
           void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("project-sync", project.name));
-        });
+        }, undefined, !canRun, lockHelp);
       }
     }
 
@@ -638,15 +776,18 @@ class OperatorDashboardView extends ItemView {
         item.createEl("strong", { text: meeting.timing });
         item.createEl("span", { text: meeting.dateIso ? `${meeting.dateIso} - ${meeting.text}` : meeting.text });
         const actions = item.createDiv({ cls: "operator-inline-actions" });
+        createButton(actions, "check", "Done", () => {
+          void this.plugin.updateTaskFromUi(home.blockersPath, meeting, "x");
+        });
         if (meeting.project) {
           const args = [meeting.project, meeting.dateIso].filter(Boolean).join(" ");
           createButton(actions, "clipboard-list", "Prep", () => {
             void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("meeting-prep", args));
-          });
+          }, undefined, !canRun, lockHelp);
         }
       }
     }
-    createButton(meetings, "file-text", "Open blockers", () => void this.plugin.openVaultPath(home.blockersPath));
+    createButton(meetings, "file-text", "Open blockers", () => void this.plugin.openVaultPath(home.blockersPath), undefined, !home.blockersExists);
 
     const waiting = grid.createDiv({ cls: "operator-home-panel" });
     waiting.createEl("h4", { text: "Waiting on" });
@@ -655,96 +796,171 @@ class OperatorDashboardView extends ItemView {
     } else {
       const list = waiting.createEl("ul", { cls: "operator-list" });
       for (const item of home.blockers.waitingOn.slice(0, 6)) {
-        list.createEl("li", { text: item.text });
+        const row = list.createEl("li");
+        row.createEl("span", { text: item.text });
+        const actions = row.createDiv({ cls: "operator-inline-actions" });
+        createButton(actions, "check", "Done", () => {
+          void this.plugin.updateTaskFromUi(home.blockersPath, item, "x");
+        });
       }
     }
   }
 
-  private renderWorkflowShortcuts(root: HTMLElement, status: OperatorEnvironmentStatus, home: OperatorHomeState): void {
+  private renderWorkflowShortcuts(root: HTMLElement, status: OperatorEnvironmentStatus, home: OperatorHomeState, date: Date): void {
     const section = createDisclosureSection(root, "More workflows", "Native actions handle fixed structure; agent workflows and CLI-style prompts stay available here.");
     const canRun = this.canRun(status);
+    const lockHelp = canRun
+      ? undefined
+      : formatWorkflowUnavailableHelp(status, this.plugin.settings.backend, "More workflows", !!this.plugin.activeRun);
+    if (lockHelp) {
+      section.createEl("p", { cls: "operator-help", text: lockHelp });
+    }
+    const createAgentWorkflowButton = (
+      parent: HTMLElement,
+      icon: string,
+      label: string,
+      onClick: () => void,
+      extraClass?: string,
+    ) => createButton(parent, icon, label, onClick, extraClass, !canRun, lockHelp);
     const grid = section.createDiv({ cls: "operator-workflow-grid" });
 
+    const now = date;
     const planWeek = createWorkflowCard(grid, "Plan week", "Open or review the current execution layer.");
-    createButton(planWeek, "calendar-plus", "Weekly setup", () => {
-      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("weekly-init"));
-    }, undefined, !canRun);
-    createButton(planWeek, "list-checks", "Weekly review", () => {
-      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("weekly-review"));
-    }, undefined, !canRun);
+    const weekInput = createInlineInput(planWeek, "Week", buildWeeklyPeriodPlaceholder(now));
+    createAgentWorkflowButton(planWeek, "calendar-plus", "Weekly setup", () => {
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("weekly-init", resolveWeeklyPeriodInput("init", weekInput.value)));
+    });
+    createAgentWorkflowButton(planWeek, "list-checks", "Weekly review", () => {
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("weekly-review", resolveWeeklyPeriodInput("review", weekInput.value)));
+    });
+
+    const strategy = createWorkflowCard(grid, "Strategy review", "Annual vision/review, quarterly plans, monthly pulses, and quarter reviews stay one click away.");
+    const annualYearInput = createInlineInput(strategy, "Year", "YYYY; vision accepts next; review accepts last");
+    const strategyPeriodInput = createInlineInput(strategy, "Period", buildStrategyPeriodPlaceholder(now));
+    createAgentWorkflowButton(strategy, "compass", "Annual vision", () => {
+      const annual = resolveAnnualShortcutInput("vision", annualYearInput.value);
+      annualYearInput.value = annual.nextInputValue;
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("annual-vision", annual.year));
+    });
+    createAgentWorkflowButton(strategy, "book-open-check", "Annual review", () => {
+      const annual = resolveAnnualShortcutInput("review", annualYearInput.value);
+      annualYearInput.value = annual.nextInputValue;
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("annual-vision", `review ${annual.year}`));
+    });
+    createAgentWorkflowButton(strategy, "milestone", "Quarter plan", () => {
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("quarterly-plan", resolveQuarterlyPeriodInput("init", strategyPeriodInput.value)));
+    });
+    createAgentWorkflowButton(strategy, "activity", "Monthly pulse", () => {
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("quarterly-plan", resolveQuarterlyPeriodInput("pulse", strategyPeriodInput.value)));
+    });
+    createAgentWorkflowButton(strategy, "history", "Quarter review", () => {
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("quarterly-plan", resolveQuarterlyPeriodInput("review", strategyPeriodInput.value)));
+    });
 
     const project = createWorkflowCard(grid, "Work on project", "Create structure natively, or run agent workflows when context needs synthesis.");
     const projectInput = createInlineInput(project, "Project name", "Customer Discovery", home.activeProjects[0]?.name ?? "");
     createButton(project, "folder-plus", "New project", () => void this.plugin.openProjectCreation(projectInput.value));
-    createButton(project, "terminal", "Run /project-init", () => {
+    createAgentWorkflowButton(project, "terminal", "Run /project-init", () => {
       const projectName = requireInput(projectInput, "a project name");
       if (projectName) {
         void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("project-init", projectName));
       }
-    }, undefined, !canRun);
-    createButton(project, "refresh-cw", "Sync", () => {
+    });
+    createAgentWorkflowButton(project, "refresh-cw", "Sync", () => {
       const projectName = requireInput(projectInput, "a project name");
       if (projectName) {
         void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("project-sync", projectName));
       }
-    }, undefined, !canRun);
-    createButton(project, "target", "Deadline plan", () => {
+    });
+    createAgentWorkflowButton(project, "target", "Deadline plan", () => {
       const projectName = requireInput(projectInput, "a project name");
       if (projectName) {
         void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("deadline-plan", projectName));
       }
-    }, undefined, !canRun);
+    });
 
     const meeting = createWorkflowCard(grid, "Process meeting", "Prep before, process transcript after.");
     const meetingProject = createInlineInput(meeting, "Project", "ProjectAlpha", home.activeProjects[0]?.name ?? "");
-    const meetingDate = createInlineInput(meeting, "Date", "YYYY-MM-DD", formatDateKey(new Date()));
-    const meetingInput = createInlineInput(meeting, "Transcript path or text", "");
-    createButton(meeting, "clipboard-list", "Prep", () => {
+    const meetingDate = createInlineInput(meeting, "Date", "YYYY-MM-DD", formatDateKey(now));
+    const meetingInput = createBlockInput(meeting, "Transcript path or text", "Paste transcript text, or enter a local transcript/audio path");
+    createAgentWorkflowButton(meeting, "clipboard-list", "Prep", () => {
       const projectName = requireInput(meetingProject, "a project name");
       if (projectName) {
         void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("meeting-prep", `${projectName} ${meetingDate.value}`));
       }
-    }, undefined, !canRun);
-    createButton(meeting, "mic", "Process", () => {
+    });
+    createAgentWorkflowButton(meeting, "mic", "Process", () => {
       const meetingSource = requireInput(meetingInput, "a transcript path or pasted transcript");
       if (meetingSource) {
         void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("meeting", meetingSource));
       }
-    }, undefined, !canRun);
+    });
 
-    const content = createWorkflowCard(grid, "Content / research", "Mine notes, draft, or run a deeper research brief.");
+    const optionalSection = createDisclosureSection(section, "Optional modules", "Enable interest-specific workflows deliberately; they are not required for the daily concierge.");
+    const optionalModules = optionalSection.createDiv({ cls: "operator-workflow-grid" });
+
+    const content = createWorkflowCard(optionalModules, "Content", "Mine notes, draft, or run a deeper research brief when this workflow fits your day.");
     const topicInput = createInlineInput(content, "Topic or backlog item", "");
-    createButton(content, "sparkles", "Extract ideas", () => {
+    createAgentWorkflowButton(content, "sparkles", "Extract ideas", () => {
       void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("content-extract"));
-    }, undefined, !canRun);
-    createButton(content, "pen-line", "Draft", () => {
+    });
+    createAgentWorkflowButton(content, "pen-line", "Draft", () => {
       const topic = requireInput(topicInput, "a topic or backlog item");
       if (topic) {
         void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("content-draft", topic));
       }
-    }, undefined, !canRun);
-    createButton(content, "search", "Deep research", () => {
+    });
+    createAgentWorkflowButton(content, "search", "Deep research", () => {
       const topic = requireInput(topicInput, "a research topic");
       if (topic) {
         void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("deep-research", topic));
       }
-    }, undefined, !canRun);
+    });
+
+    const intelligence = createWorkflowCard(optionalModules, "Intelligence", "Run optional GitHub, arXiv, and AI landscape scans.");
+    const intelligenceInput = createInlineInput(intelligence, "Filter", "last, rust weekly 15, or robotics");
+    createAgentWorkflowButton(intelligence, "newspaper", "AI weekly", () => {
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("ai-weekly-digest", intelligenceInput.value));
+    });
+    createAgentWorkflowButton(intelligence, "github", "GitHub trends", () => {
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("daily-github", intelligenceInput.value));
+    });
+    createAgentWorkflowButton(intelligence, "graduation-cap", "Academic scan", () => {
+      void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("daily-academic", intelligenceInput.value));
+    });
+
+    const events = createWorkflowCard(optionalModules, "Calendar / events", "Batch-add commitments so weekly setup can route them into Blockers and project notes.");
+    const eventsInput = createBlockInput(events, "Events", "Paste one event or deadline per line");
+    createAgentWorkflowButton(events, "calendar-plus", "Add events", () => {
+      const eventsText = requireInput(eventsInput, "event details");
+      if (eventsText) {
+        void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("add-events", eventsText));
+      }
+    });
 
     const advanced = createWorkflowCard(grid, "Agent prompt / CLI command", "Run any slash command or freeform agent prompt without leaving Obsidian.");
     const custom = advanced.createEl("textarea", {
       cls: "operator-prompt-input",
-      attr: { rows: "3", placeholder: "/daily-init 6, /project-init MyProject, or review a note" },
+      attr: { rows: "3", placeholder: buildAdvancedPromptPlaceholder(this.plugin.settings.availableHours) },
     });
     createButton(advanced, "copy", "Copy CLI handoff", () => {
-      const prompt = custom.value.trim() || "/daily-init 6";
-      void copyTextToClipboard(buildCliHandoff(this.plugin.getVaultPath(), prompt), "CLI handoff copied.");
+      const prompt = resolveAdvancedPrompt(custom.value, this.plugin.settings.availableHours);
+      void copyTextToClipboard(buildCliHandoff(this.plugin.getVaultPath(), prompt, new Date(), this.plugin.settings.backend, {
+        codexPath: this.plugin.status?.resolvedPaths.codex ?? this.plugin.settings.codexPath,
+        claudePath: this.plugin.status?.resolvedPaths.claude ?? this.plugin.settings.claudePath,
+      }), "CLI handoff copied.");
     });
-    createButton(advanced, "terminal", "Preview and run", () => {
-      const prompt = requireInput(custom, "a prompt");
-      if (prompt) {
-        void this.plugin.previewAndRunWorkflow(describePrompt(prompt));
-      }
-    }, "mod-cta", !canRun);
+    createAgentWorkflowButton(advanced, "terminal", "Preview and run", () => {
+      const prompt = resolveAdvancedPrompt(custom.value, this.plugin.settings.availableHours);
+      void this.plugin.previewAndRunWorkflow(describePrompt(prompt));
+    }, "mod-cta");
+  }
+
+  private updateAdvancedPromptPlaceholders(hours: number): void {
+    const placeholder = buildAdvancedPromptPlaceholder(hours);
+    for (const promptInput of Array.from(this.contentEl.querySelectorAll<HTMLTextAreaElement>(".operator-prompt-input"))) {
+      promptInput.placeholder = placeholder;
+    }
   }
 
   private renderQuickCapture(root: HTMLElement, home: OperatorHomeState): void {
@@ -759,10 +975,14 @@ class OperatorDashboardView extends ItemView {
     select.createEl("option", { attr: { value: "research" }, text: "Research question" });
     const field = row.createDiv({ cls: "operator-field operator-grow" });
     field.createEl("label", { text: "Capture" });
-    const input = field.createEl("input", { attr: { placeholder: "Something worth keeping..." } });
+    const input = field.createEl("textarea", {
+      cls: "operator-manual-input",
+      attr: { rows: "2", placeholder: "Something worth keeping..." },
+    });
     createButton(row, "plus", "Capture", () => {
-      void this.plugin.appendCapture(select.value as "idea" | "task" | "meeting" | "research", input.value);
-      input.value = "";
+      void clearInputAfterSuccessfulCapture(input, () => {
+        return this.plugin.appendCapture(select.value as "idea" | "task" | "meeting" | "research", input.value);
+      });
     });
   }
 
@@ -780,9 +1000,12 @@ class OperatorDashboardView extends ItemView {
       meta.createSpan({ text: `Ended: ${new Date(lastRun.endedAt).toLocaleString()}` });
     }
     if (lastRun.expectedOpenPath) {
+      const expectedFile = this.app.vault.getAbstractFileByPath(lastRun.expectedOpenPath);
+      const expectedExists = expectedFile instanceof TFile;
+      meta.createSpan({ text: formatExpectedNoteStatus(lastRun.expectedOpenPath, expectedExists, lastRun.status) });
       createButton(meta, "file-text", "Open expected note", () => {
         void this.plugin.openVaultPath(lastRun.expectedOpenPath ?? "");
-      });
+      }, undefined, !expectedExists);
     }
 
     const prompt = section.createEl("code", { cls: "operator-run-prompt", text: lastRun.prompt });
@@ -808,6 +1031,15 @@ class OperatorDashboardView extends ItemView {
       return false;
     }
     return canRunBackendWorkflows(status, this.plugin.settings.backend);
+  }
+
+  updateHeaderClock(date: Date): void {
+    const headerMeta = this.contentEl.querySelector<HTMLElement>(".operator-clock-meta");
+    const dailyNotePath = headerMeta?.getAttr("data-daily-note-path");
+    if (!headerMeta || !dailyNotePath) {
+      return;
+    }
+    headerMeta.setText(`${formatDashboardRunContext(date)} · ${dailyNotePath}`);
   }
 }
 
@@ -874,6 +1106,15 @@ class OperatorSettingTab extends PluginSettingTab {
     });
 
     new Setting(containerEl)
+      .setName("Optional modules")
+      .setDesc("Daily start only runs these modules when you enable them here. The modules remain available from More workflows and raw CLI either way.");
+
+    addOptionalModuleToggle(containerEl, "Intelligence", "Allow Start my day to run AI weekly and GitHub scans after the core briefing.", this.plugin, "intelligence");
+    addOptionalModuleToggle(containerEl, "Academic", "Allow Start my day to run the arXiv scan after the core briefing.", this.plugin, "academic");
+    addOptionalModuleToggle(containerEl, "Content", "Allow Start my day to extract content ideas after enabled source modules or the core briefing.", this.plugin, "content");
+    addOptionalModuleToggle(containerEl, "Calendar/events", "Allow Start my day to ingest pasted event/deadline text from manual items.", this.plugin, "calendarEvents");
+
+    new Setting(containerEl)
       .setName("Runner authorization")
       .setDesc("Reset this if you want Operator to ask before launching Codex or Claude again.")
       .addButton((button: ButtonComponent) => {
@@ -922,6 +1163,8 @@ class RunnerConsentModal extends Modal {
 }
 
 class RunPreviewModal extends Modal {
+  private settled = false;
+
   constructor(
     app: App,
     private readonly spec: OperatorWorkflowRunSpec,
@@ -936,7 +1179,7 @@ class RunPreviewModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("operator-preview-modal");
-    contentEl.createEl("h2", { text: `Preview: ${this.spec.label}` });
+    const title = contentEl.createEl("h2", { text: `Preview: ${this.spec.label}` });
     contentEl.createEl("p", {
       cls: "operator-muted",
       text: "Review and edit the exact prompt before Operator launches the agent.",
@@ -945,6 +1188,7 @@ class RunPreviewModal extends Modal {
     const meta = contentEl.createDiv({ cls: "operator-preview-meta" });
     meta.createSpan({ text: `Backend: ${this.backend}` });
     meta.createSpan({ text: `Vault: ${this.vaultPath}` });
+    const expectedNote = meta.createSpan();
 
     const field = contentEl.createDiv({ cls: "operator-field" });
     field.createEl("label", { text: "Prompt" });
@@ -955,29 +1199,51 @@ class RunPreviewModal extends Modal {
     promptInput.value = this.spec.prompt;
 
     const columns = contentEl.createDiv({ cls: "operator-preview-grid" });
-    renderAreaList(columns, "Likely reads", this.spec.readAreas);
-    renderAreaList(columns, "Likely writes", this.spec.writeAreas);
+    const runNotes = contentEl.createDiv();
+    const getResolvedPreview = () => resolveEditedPreviewSpec(this.spec, promptInput.value);
+    const renderResolvedPreview = () => {
+      const resolved = getResolvedPreview();
+      title.setText(`Preview: ${resolved.label}`);
+      expectedNote.setText(resolved.expectedOpenPath ? `Expected note: ${resolved.expectedOpenPath}` : "Expected note: not predicted");
+      columns.empty();
+      runNotes.empty();
+      if (resolved.targetNotes?.length) {
+        renderAreaList(columns, "Targets", resolved.targetNotes);
+      }
+      renderAreaList(columns, "Likely reads", resolved.readAreas);
+      renderAreaList(columns, "Likely writes", resolved.writeAreas);
+      if (resolved.runNotes?.length) {
+        renderAreaList(runNotes, "May also run", resolved.runNotes);
+      }
+    };
+    promptInput.addEventListener("input", renderResolvedPreview);
+    renderResolvedPreview();
 
     const row = contentEl.createDiv({ cls: "operator-modal-actions" });
     createButton(row, "x", "Cancel", () => {
-      this.resolve(null);
+      this.settle(null);
       this.close();
     });
     createButton(row, "copy", "Copy prompt", () => {
-      void copyTextToClipboard(promptInput.value, "Prompt copied.");
+      void copyTextToClipboard(getResolvedPreview().prompt, "Prompt copied.");
     });
     createButton(row, "play", "Run", () => {
-      const edited = describePrompt(promptInput.value);
-      this.resolve({
-        ...edited,
-        label: edited.id === this.spec.id ? this.spec.label : edited.label,
-      });
+      this.settle(getResolvedPreview());
       this.close();
     }, "mod-cta");
   }
 
   onClose(): void {
+    this.settle(null);
     this.contentEl.empty();
+  }
+
+  private settle(spec: OperatorWorkflowRunSpec | null): void {
+    if (this.settled) {
+      return;
+    }
+    this.settled = true;
+    this.resolve(spec);
   }
 }
 
@@ -1092,6 +1358,15 @@ function createInlineInput(parent: HTMLElement, label: string, placeholder: stri
   return input;
 }
 
+function createBlockInput(parent: HTMLElement, label: string, placeholder: string): HTMLTextAreaElement {
+  const field = parent.createDiv({ cls: "operator-field" });
+  field.createEl("label", { text: label });
+  return field.createEl("textarea", {
+    cls: "operator-prompt-input",
+    attr: { rows: "4", placeholder },
+  });
+}
+
 function renderTextList(parent: HTMLElement, items: string[], emptyText: string): void {
   if (items.length === 0) {
     parent.createEl("p", { cls: "operator-muted", text: emptyText });
@@ -1115,15 +1390,6 @@ function requireInput(input: HTMLInputElement | HTMLTextAreaElement, label: stri
   return null;
 }
 
-function buildCliHandoff(vaultPath: string | null, prompt: string): string {
-  const cdLine = vaultPath ? `cd ${shellQuote(vaultPath)}` : "cd <your-vault-path>";
-  return `${cdLine}\ncodex\n# paste into Codex: ${prompt}`;
-}
-
-function shellQuote(value: string): string {
-  return `'${value.replace(/'/g, "'\\''")}'`;
-}
-
 async function copyTextToClipboard(value: string, successMessage: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(value);
@@ -1140,6 +1406,7 @@ function createButton(
   onClick: () => void,
   extraClass?: string,
   disabled = false,
+  title = label,
 ): HTMLButtonElement {
   const button = parent.createEl("button", { cls: "operator-button" });
   if (extraClass) {
@@ -1149,6 +1416,8 @@ function createButton(
   setIcon(iconEl, icon);
   button.createSpan({ text: label });
   button.disabled = disabled;
+  button.setAttr("title", title);
+  button.setAttr("aria-label", disabled && title !== label ? `${label}: ${title}` : label);
   button.addEventListener("click", onClick);
   return button;
 }
@@ -1169,10 +1438,11 @@ function renderStatusTile(
   detail: string,
   optional = false,
 ): void {
-  const tile = parent.createDiv({ cls: `operator-status-tile is-${state}` });
+  const visualState = optional && state !== "ready" ? "optional" : state;
+  const tile = parent.createDiv({ cls: `operator-status-tile is-${visualState}` });
   const header = tile.createDiv({ cls: "operator-status-title" });
   header.createSpan({ text: label });
-  header.createSpan({ cls: "operator-chip", text: optional && state === "missing" ? "optional" : state });
+  header.createSpan({ cls: `operator-chip is-${visualState}`, text: visualState === "optional" ? "optional" : state });
   tile.createEl("p", { text: detail });
 }
 
@@ -1217,6 +1487,24 @@ function addTextSetting(
     .addText((text: TextComponent) => {
       text.setValue(value).onChange((nextValue) => {
         void onChange(nextValue.trim());
+      });
+    });
+}
+
+function addOptionalModuleToggle(
+  parent: HTMLElement,
+  name: string,
+  description: string,
+  plugin: OperatorControlPlugin,
+  key: keyof OperatorSettings["optionalModules"],
+): void {
+  new Setting(parent)
+    .setName(name)
+    .setDesc(description)
+    .addToggle((toggle) => {
+      toggle.setValue(plugin.settings.optionalModules[key]).onChange(async (value) => {
+        plugin.settings.optionalModules[key] = value;
+        await plugin.saveSettings();
       });
     });
 }

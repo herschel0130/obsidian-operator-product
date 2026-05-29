@@ -1,7 +1,7 @@
 {
   "name": "obsidian-operator",
-  "version": "2.0.1",
-  "description": "AI-native personal operating system for Obsidian — 20 skills (19 production + 1 cross-platform reference) for vault setup, daily briefings, arXiv paper scanning, weekly reviews, strategic planning, meeting processing, deadline tracking, deep research, and content engine.",
+  "version": "2.0.13",
+  "description": "AI-native personal operating system for Obsidian — core concierge skills for vault setup, daily briefings, weekly reviews, strategy, projects, meetings, and optional intelligence/content modules.",
   "author": {
     "name": "Yuhan Wang",
     "url": "https://github.com/yuhanwang14"
@@ -15,7 +15,7 @@
   "interface": {
     "displayName": "Obsidian Operator",
     "shortDescription": "Personal operating system for Obsidian",
-    "longDescription": "20 skills (19 production + 1 cross-platform reference) that turn an Obsidian vault into a structured execution engine — daily briefings, arXiv paper scanning, weekly reviews, strategic planning, meeting processing, deadline tracking, deep research, and a content engine for publishing.",
+    "longDescription": "20 skills (19 production + 1 cross-platform reference) that turn an Obsidian vault into an AI-native personal operating system — daily concierge runs, weekly reviews, strategic planning, meetings, projects, deadline tracking, deep research, and optional intelligence/content modules.",
     "developerName": "Yuhan Wang",
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],
@@ -23,7 +23,7 @@
     "defaultPrompt": [
       "Set up my new Obsidian vault",
       "Generate today's briefing",
-      "Run a deep research on a topic"
+      "Prepare for an upcoming meeting"
     ]
   }
 }

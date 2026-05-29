@@ -3,13 +3,13 @@ name: weekly-init
 description: "TRIGGER IMMEDIATELY for /weekly-init, or when the user wants to start a new week — Monday setup, weekly planning, creating W## folders, building a weekly todo/blockers, or carrying over unfinished items. NOT for weekly review/retrospective or daily briefings."
 ---
 
-Initialize the current week: create the week folder, carry unfinished items from last week, and populate the Weekly Todo.
+Initialize the target week: create the week folder, carry unfinished items from the prior week, and populate the Weekly Todo. If the prompt includes an explicit ISO week like `/weekly-init 2026-W21`, use that week; otherwise use the current local week.
 
 **CLI fallback:** If any `obsidian` CLI command fails, silently use the equivalent file tool (Read, Write, Edit). Do not surface CLI errors to the user.
 
 ## Steps
 
-1. **Compute the current week string** — Use today's date to derive `YYYY-[W]WW` (e.g. `2026-W08`). Also compute last week's string (`YYYY-[W](WW-1)`), handling year boundaries correctly.
+1. **Compute the target week string** — If the user supplied an explicit ISO week such as `YYYY-W08` after `/weekly-init`, use that week as the target. Otherwise use today's date to derive `YYYY-[W]WW` (e.g. `2026-W08`). Also compute the prior ISO week relative to the target week, handling year boundaries correctly.
 
 2. **Create the week folder** — Ensure `01_Execution/YYYY-[W]WW/` exists. No-op if it already exists.
 

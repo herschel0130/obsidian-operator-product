@@ -109,6 +109,34 @@ export interface BackendReadiness {
   helpText: string;
 }
 
+export async function getFreshBackendReadinessForRun(
+  refreshStatus: () => Promise<OperatorEnvironmentStatus>,
+  backend: OperatorBackend,
+  _cachedStatus?: OperatorEnvironmentStatus | null,
+): Promise<{ status: OperatorEnvironmentStatus; readiness: BackendReadiness }> {
+  const status = await refreshStatus();
+  return {
+    status,
+    readiness: getBackendReadiness(status, backend),
+  };
+}
+
+export async function getFreshWorkflowLaunchGate(
+  refreshStatus: () => Promise<OperatorEnvironmentStatus>,
+  backend: OperatorBackend,
+  actionLabel = "Agent workflow",
+): Promise<{ status: OperatorEnvironmentStatus; readiness: BackendReadiness; ready: boolean; noticeText: string }> {
+  const { status, readiness } = await getFreshBackendReadinessForRun(refreshStatus, backend);
+  return {
+    status,
+    readiness,
+    ready: readiness.ready,
+    noticeText: readiness.ready
+      ? readiness.helpText
+      : formatWorkflowLockHelp(status, backend, actionLabel),
+  };
+}
+
 export function getBackendReadiness(status: OperatorEnvironmentStatus, backend: OperatorBackend): BackendReadiness {
   const blockers: string[] = [];
   if (!status.vault.ready) {
@@ -144,6 +172,32 @@ export function getBackendReadiness(status: OperatorEnvironmentStatus, backend: 
         : `${label} workflows need: ${blockers.join(", ")}.`,
     }
   );
+}
+
+export function formatWorkflowLockHelp(
+  status: OperatorEnvironmentStatus,
+  backend: OperatorBackend,
+  actionLabel = "Agent workflows",
+): string {
+  const readiness = getBackendReadiness(status, backend);
+  const backendLabel = backend === "codex" ? "Codex" : "Claude";
+  if (readiness.ready) {
+    return `${actionLabel} can run with ${backendLabel}.`;
+  }
+  const verb = /\b(workflows|actions|buttons)\b/i.test(actionLabel) ? "need" : "needs";
+  return `${actionLabel} ${verb} setup first: ${readiness.blockers.join(", ")}. Open Setup health for the exact fix.`;
+}
+
+export function formatWorkflowUnavailableHelp(
+  status: OperatorEnvironmentStatus,
+  backend: OperatorBackend,
+  actionLabel = "Agent workflows",
+  activeRun = false,
+): string {
+  if (activeRun) {
+    return "Operator is already running. Use Cancel run before starting another workflow.";
+  }
+  return formatWorkflowLockHelp(status, backend, actionLabel);
 }
 
 async function commandResponds(command: string, args: string[]): Promise<boolean> {
@@ -206,11 +260,10 @@ function detectClaudeSkills(): StatusState {
     join(home, ".claude", "config.json"),
   ];
 
+  const configContents: string[] = [];
   for (const file of configFiles) {
     try {
-      if (readFileSync(file, "utf8").includes("obsidian-operator")) {
-        return "ready";
-      }
+      configContents.push(readFileSync(file, "utf8"));
     } catch {
       // Config files vary by Claude Code version.
     }
@@ -221,11 +274,97 @@ function detectClaudeSkills(): StatusState {
     join(home, ".claude", "plugins", "cache"),
     join(home, ".claude", "marketplaces"),
   ];
-  if (pluginRoots.some((root) => treeContains(root, "obsidian-operator", 5))) {
+  return detectClaudeSkillsFromSources(configContents, pluginRoots.some((root) => treeContains(root, "obsidian-operator", 5)));
+}
+
+export function detectClaudeSkillsFromSources(configContents: string[], pluginRootFound: boolean): StatusState {
+  if (configContents.some(hasEnabledClaudePlugin)) {
+    return "ready";
+  }
+
+  if (configContents.some((content) => content.includes("obsidian-operator")) || pluginRootFound) {
     return "warning";
   }
 
   return "missing";
+}
+
+function hasEnabledClaudePlugin(config: string): boolean {
+  if (!config.includes("obsidian-operator")) {
+    return false;
+  }
+
+  try {
+    return objectHasEnabledPlugin(JSON.parse(config), "obsidian-operator");
+  } catch {
+    return hasNearbyEnabledFlag(config, "obsidian-operator");
+  }
+}
+
+function objectHasEnabledPlugin(value: unknown, pluginName: string): boolean {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  if (pluginCollectionEnables(record.plugins, pluginName) || enabledPluginListIncludes(record.enabledPlugins, pluginName)) {
+    return true;
+  }
+
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    if (key === "marketplaces" || key === "marketplace") {
+      continue;
+    }
+    if (objectHasEnabledPlugin(child, pluginName)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function pluginCollectionEnables(value: unknown, pluginName: string): boolean {
+  if (Array.isArray(value)) {
+    return value.some((entry) => {
+      if (typeof entry === "string") {
+        return entry === pluginName || entry.startsWith(`${pluginName}@`);
+      }
+      if (!entry || typeof entry !== "object") {
+        return false;
+      }
+      const record = entry as { name?: unknown; id?: unknown; enabled?: unknown };
+      const name = typeof record.name === "string" ? record.name : typeof record.id === "string" ? record.id : "";
+      return (name === pluginName || name.startsWith(`${pluginName}@`)) && record.enabled === true;
+    });
+  }
+
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    if (key === pluginName || key.startsWith(`${pluginName}@`)) {
+      if (child === true) {
+        return true;
+      }
+      if (child && typeof child === "object" && (child as { enabled?: unknown }).enabled === true) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function enabledPluginListIncludes(value: unknown, pluginName: string): boolean {
+  return Array.isArray(value) && value.some((entry) => typeof entry === "string" && (entry === pluginName || entry.startsWith(`${pluginName}@`)));
+}
+
+function hasNearbyEnabledFlag(config: string, pluginName: string): boolean {
+  const escaped = pluginName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pluginBlock = new RegExp(`\\[plugins\\.[^\\]]*${escaped}[^\\]]*\\][\\s\\S]{0,240}\\benabled\\s*[:=]\\s*true`, "i");
+  const enabledList = new RegExp(`\\benabledPlugins\\b[\\s\\S]{0,240}${escaped}`, "i");
+  return pluginBlock.test(config) || enabledList.test(config);
 }
 
 function treeContains(root: string, needle: string, maxDepth: number): boolean {

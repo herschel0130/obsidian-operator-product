@@ -24,6 +24,16 @@ Examples:
 
 Parsing rule: if the first argument is a bare number (integer or decimal), treat it as the daily budget. Everything else is parsed as comma-separated manual action items, tagged with "manual:" in Action Items.
 
+Operator Preview may pass manual items as a separate block:
+
+```text
+Manual items to consider today:
+review deck
+email Kai
+```
+
+Treat each non-empty line in that block as a manual action item, preserving the user's wording. If both CLI-style manual arguments and a Preview block are present, merge them and deduplicate normally.
+
 ## Pre-Flight Check
 
 Run these checks **in order** before reading any other data source:
@@ -32,31 +42,29 @@ Run these checks **in order** before reading any other data source:
 
 ### 1. Close last week (new-week boundary)
 Determine last week's ISO week number. Check whether `01_Execution/YYYY-[W]WW/Weekly Review.md` exists for **last week's** folder.
-- If it does **not** exist and today is in a **different ISO week** from the most recent daily note → run `/weekly-review` for last week first, wait for it to complete, then continue.
+- If it does **not** exist and the current ISO week is after last week's ISO week → run `/weekly-review` for last week first, wait for it to complete, then continue.
 - If it already exists → skip.
 
-This fires on the first `/daily-init` of a new week, regardless of which day that is.
+This fires on the first `/daily-init` of a new week, regardless of which day that is. The date condition is that the current ISO week is after the target week, so catch-up runs later in the week are eligible when the review artifact is still missing.
 
-### 1b. AI Weekly Digest (new-week boundary)
-After step 1, check whether `04_Knowledge/AI-Weekly/YYYY-[W]WW - AI Weekly Digest.md` exists for **last week**.
-- If it does **not** exist and today is in a **different ISO week** from last week → run `/ai-weekly-digest`, wait for it to complete, then continue.
-- If it already exists → skip.
+### 1b. Optional intelligence digest
+`/ai-weekly-digest` is an optional Intelligence module, not a required daily concierge step. Do not run it from `/daily-init` unless the user explicitly enabled or requested the Intelligence module in the prompt, Operator Preview, or current conversation.
 
 ### 1c. Monthly pulse (new-month boundary)
 Check whether `00_Strategy/YYYY-QX/Monthly Pulse - MM.md` exists for **last month** (where MM is last month's two-digit number and YYYY-QX is last month's quarter).
 - If it does **not** exist and today's month differs from last month → run `/quarterly-plan pulse` for last month, wait for completion.
 - If it already exists → skip.
 
-This fires on the first `/daily-init` of a new month, regardless of which day that is.
+This fires on the first `/daily-init` of a new month, regardless of which day that is. The date condition is that the current month is after the target month, so catch-up runs after the first day are eligible when the pulse artifact is still missing.
 
-**This trigger is NON-NEGOTIABLE.** When the condition fires, run the skill — do NOT flag-and-skip just because the downstream skill might involve secondary interactive sub-steps. The quarterly-plan skill's Step 5 (calendar/reminder creation) explicitly skips itself in auto-mode, so the auto-trigger will complete without any user prompts. If you find yourself reasoning "I'll just flag this for the user to run later," stop — that reasoning is the regression that caused the April 2026 pulse to be missed for 2 consecutive days. Run the skill.
+**Core concierge rule:** When the condition fires, run the skill. Do not flag-and-skip solely because the downstream skill might involve secondary interactive sub-steps. The quarterly-plan skill's Step 5 (calendar/reminder creation) explicitly skips itself in auto-mode, so the auto-trigger will complete without any user prompts.
 
 ### 1d. Close last quarter (new-quarter boundary)
 Check whether today's quarter differs from last quarter. If so, check whether `00_Strategy/YYYY-Q(X-1)/Quarterly Review.md` exists for **last quarter**.
 - If it does **not** exist → run `/quarterly-plan review` for last quarter, wait for completion.
 - If it already exists → skip.
 
-This fires on the first `/daily-init` of a new quarter, regardless of which day that is.
+This fires on the first `/daily-init` of a new quarter, regardless of which day that is. The date condition is that the current quarter is after the review target, so catch-up runs after the first day are eligible when the review artifact is still missing.
 
 ### 1e. Open new quarter (new-quarter boundary)
 Same trigger as 1d. Check whether `00_Strategy/YYYY-QX/Quarterly Plan.md` exists for the **current quarter**.
@@ -64,7 +72,7 @@ Same trigger as 1d. Check whether `00_Strategy/YYYY-QX/Quarterly Plan.md` exists
 - If it already exists → skip.
 
 ### 2. Open this week
-Run `/weekly-init` for the **current week**. If the Weekly Todo and Blockers already exist, `/weekly-init` runs in update mode — merging new carried items, deadline tasks, and meetings without overwriting existing content. If they don't exist, `/weekly-init` creates them. Wait for completion, then proceed to data sources.
+Run `/weekly-init YYYY-WXX` for the **current ISO week** using the week shown in the run metadata. If the Weekly Todo and Blockers already exist, `/weekly-init` runs in update mode — merging new carried items, deadline tasks, and meetings without overwriting existing content. If they don't exist, `/weekly-init` creates them. Wait for completion, then proceed to data sources.
 
 ## Data Sources
 
@@ -255,14 +263,15 @@ Rules:
 
 ## Post-Briefing
 
-After the briefing is written, open the daily note in Obsidian: `obsidian open path="<daily-note-path>"` (using the path resolved from `obsidian daily:path`).
+After the briefing is written, open the computed daily note path in Obsidian: `obsidian open path="<daily-note-path>"`. If the CLI open command fails, silently use the file tool fallback.
 
-Then automatically run `/daily-github` to fetch today's trending repos and append the summary to the daily note. Pass no arguments (defaults: all languages, daily, 10 repos).
+## Optional Modules
 
-## Post-Briefing: Academic Scan
+Do not run these modules unless the user explicitly enabled or requested them in the prompt, Operator Preview, or current conversation. Operator Preview may include an `Enabled optional modules for this daily run:` block; only modules listed in that block are enabled for this run.
 
-After `/daily-github` has run, automatically run `/daily-academic` to fetch today's notable arXiv papers and append the summary to the daily note. Pass no arguments (defaults: multi-category scan, 8 papers).
+- `/ai-weekly-digest` — optional Intelligence module for weekly AI landscape synthesis.
+- `/daily-github` — optional Intelligence module for GitHub trending scans.
+- `/daily-academic` — optional Academic module for arXiv scans.
+- `/content-extract` — optional Content module for mining publishable ideas.
 
-## Post-Briefing: Content Extract
-
-After `/daily-academic` has run, invoke `/content-extract` (the full skill) to scan yesterday's vault notes and Substack newsletter emails for publishable content ideas. Do not reimplement the logic here — the skill handles Gmail queries, vault scanning, evaluation, deduplication, and backlog appending.
+If an optional module is explicitly requested, run it after the daily note is opened, then add a concise pointer in today's `### Flags` or the appropriate weekly/project note. If it is not explicitly requested, finish after opening the daily note. The user can still run these modules from Operator Home's **Optional modules** group or through raw CLI slash commands.

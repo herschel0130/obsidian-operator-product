@@ -3,8 +3,8 @@
 # Hook event: UserPromptSubmit (auto-registered via hooks/hooks.json on plugin install)
 #
 # When the user invokes /daily-init (or natural-language equivalents), this script checks
-# the vault for missing pre-flight artifacts (last week's review, last week's AI digest,
-# last month's pulse, last quarter's review, current quarter's plan) and emits a
+# the vault for missing pre-flight artifacts (last week's review, last month's pulse,
+# last quarter's review, current quarter's plan) and emits a
 # <system-reminder>-tagged additionalContext that forces Claude to run the missing
 # skill(s) before any other daily-init work.
 #
@@ -81,18 +81,12 @@ fi
 missing=()
 fix_commands=()
 
-# Steps 1 + 1b — Weekly Review + AI Weekly Digest (only if crossed week boundary)
+# Step 1 — Weekly Review (only if crossed week boundary)
 if [ "$today_iso_year" != "$last_iso_year" ] || [ "$today_iso_week" != "$last_iso_week" ]; then
   weekly_review="$VAULT/01_Execution/${last_iso_year}-W${last_iso_week}/Weekly Review.md"
   if [ ! -f "$weekly_review" ]; then
     missing+=("Weekly Review for ${last_iso_year}-W${last_iso_week}")
     fix_commands+=("/weekly-review ${last_iso_year}-W${last_iso_week}")
-  fi
-
-  ai_digest="$VAULT/04_Knowledge/AI-Weekly/${last_iso_year}-W${last_iso_week} - AI Weekly Digest.md"
-  if [ ! -f "$ai_digest" ]; then
-    missing+=("AI Weekly Digest for ${last_iso_year}-W${last_iso_week}")
-    fix_commands+=("/ai-weekly-digest")
   fi
 fi
 
@@ -128,7 +122,7 @@ fi
 build_reminder() {
   cat <<EOF
 <system-reminder>
-DAILY-INIT PRE-FLIGHT REQUIREMENTS DETECTED — these MUST be completed before any other daily-init work, in this exact order:
+DAILY-INIT PRE-FLIGHT REQUIREMENTS DETECTED — complete these before other daily-init work, in this exact order:
 
 EOF
   i=0
@@ -138,7 +132,7 @@ EOF
   done
   cat <<EOF
 
-These are NON-NEGOTIABLE pre-flight checks (enforced by obsidian-operator hooks/preflight-enforce.sh, plugin v1.7.9+). Auto-mode skip clauses are active in the downstream skills, so each runs without interactive prompts. Do not flag-and-defer; do not "just generate the briefing first" — run the missing skill(s) FIRST, then resume /daily-init.
+These pre-flight checks are required for a complete /daily-init run. Auto-mode skip clauses are active in the downstream skills, so each runs without interactive prompts. Run the missing skill(s) first, then resume /daily-init.
 </system-reminder>
 EOF
 }

@@ -127,7 +127,7 @@ There is no formal pressure-test framework. Before merging a skill change:
 2. For procedural skills, verify each step produces the expected file/output.
 3. For reference skills, type 2–3 vague natural-language triggers in a fresh session and confirm Claude routes to the skill (not to a sibling).
 
-If the skill is part of a chain (e.g. `daily-init` auto-triggers `content-extract`), verify the chain runs without manual intervention.
+If the skill is part of an explicit chain (e.g. a user-enabled optional module calls another skill), verify the chain runs without manual intervention.
 
 ## What we deliberately diverge from `superpowers` / Anthropic
 

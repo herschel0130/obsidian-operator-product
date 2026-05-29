@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 const PLUGIN_ID = "operator-control";
@@ -9,6 +9,7 @@ const REQUIRED_FILES = ["manifest.json", "main.js", "styles.css"];
 const args = parseArgs(process.argv.slice(2));
 const root = resolve(args.root ?? process.cwd());
 const out = resolve(args.out ?? join(root, "dist", `${PLUGIN_ID}.zip`));
+const shouldCreateVersionedZip = !args.out;
 const stageRoot = join(root, "dist", ".plugin-package");
 const pluginDir = join(stageRoot, PLUGIN_ID);
 
@@ -43,6 +44,14 @@ if (result.status !== 0) {
 }
 
 console.log(`Created ${out}`);
+if (shouldCreateVersionedZip) {
+  const version = readPackageVersion(root);
+  if (version) {
+    const versionedOut = join(dirname(out), `${PLUGIN_ID}-${version}.zip`);
+    copyFileSync(out, versionedOut);
+    console.log(`Created ${versionedOut}`);
+  }
+}
 
 function parseArgs(argv) {
   const parsed = {};
@@ -59,4 +68,13 @@ function parseArgs(argv) {
 function fail(message) {
   console.error(message);
   process.exit(1);
+}
+
+function readPackageVersion(root) {
+  try {
+    const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+    return typeof pkg.version === "string" && pkg.version.trim() ? pkg.version.trim() : null;
+  } catch {
+    return null;
+  }
 }

@@ -310,6 +310,12 @@
   width: 100%;
 }
 
+.operator-manual-input {
+  min-height: 44px;
+  resize: vertical;
+  width: 100%;
+}
+
 .operator-advanced-list {
   display: grid;
   gap: 8px;

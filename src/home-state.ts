@@ -17,6 +17,7 @@ export interface OperatorHomeState {
   dailyNotePath: string;
   weeklyTodoPath: string;
   blockersPath: string;
+  blockersExists: boolean;
   daily: DailyNoteSummary;
   weeklyTodo: WeeklyTodoSummary;
   activeProjects: ActiveProjectSummary[];
@@ -42,6 +43,7 @@ export async function readOperatorHomeState(app: App, date = new Date()): Promis
     dailyNotePath,
     weeklyTodoPath,
     blockersPath,
+    blockersExists: isVaultFile(blockersFile),
     daily: parseDailyNote(dailyMarkdown, isVaultFile(dailyFile)),
     weeklyTodo: parseWeeklyTodo(weeklyTodoMarkdown, isVaultFile(weeklyTodoFile)),
     activeProjects,
@@ -58,18 +60,46 @@ export async function appendQuickCapture(
   text: string,
   date = new Date(),
 ): Promise<string> {
-  const trimmed = text.trim();
-  if (!trimmed) {
+  const captureItems = normalizeCaptureItems(text);
+  if (captureItems.length === 0) {
     throw new Error("Capture text is empty.");
   }
 
   const dailyPath = getDailyNotePath(date);
   await ensureFolderPath(app, getExecutionWeekFolder(date));
   const file = await ensureDailyNote(app, dailyPath, date);
-  const line = formatCaptureLine(kind, trimmed);
+  const line = captureItems.map((item) => formatCaptureLine(kind, item)).join("\n");
 
   await app.vault.process(file, (current) => insertUnderCapture(current, line));
   return dailyPath;
+}
+
+export async function updateMarkdownTaskState(
+  app: App,
+  path: string,
+  rawLine: string,
+  marker: " " | "x" | ">",
+): Promise<void> {
+  const file = app.vault.getAbstractFileByPath(path);
+  if (!isVaultFile(file)) {
+    throw new Error(`${path} is not a note.`);
+  }
+
+  const updatedLine = rawLine.replace(/^(\s*[-*]\s+\[)[^\]](\]\s+)/, `$1${marker}$2`);
+  if (updatedLine === rawLine) {
+    throw new Error("Selected line is not a Markdown task.");
+  }
+
+  await app.vault.process(file, (current) => {
+    const occurrences = current.split(rawLine).length - 1;
+    if (occurrences === 0) {
+      throw new Error("Selected task was not found in the source note.");
+    }
+    if (occurrences > 1) {
+      throw new Error("Selected task appears more than once in the source note. Open the note to edit the exact item.");
+    }
+    return current.replace(rawLine, updatedLine);
+  });
 }
 
 async function readActiveProjects(app: App): Promise<ActiveProjectSummary[]> {
@@ -126,6 +156,14 @@ function insertUnderCapture(markdown: string, line: string): string {
   }
 
   return markdown.replace(/(^## Capture\s*$)/m, `$1\n${line}`);
+}
+
+function normalizeCaptureItems(text: string): string[] {
+  return text
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
 }
 
 function formatCaptureLine(kind: "idea" | "task" | "meeting" | "research", text: string): string {

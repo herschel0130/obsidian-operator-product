@@ -59,10 +59,10 @@ cp -rn "<assets>/vault-template/." "<vault_path>/"
 
 The template provides:
 - Six core folders (`00_Strategy`, `01_Execution`, `02_Projects`, `03_Thinking`, `04_Knowledge`, `05_Content`)
-- `04_Knowledge/GitHub/`, `04_Knowledge/Academic/`, `04_Knowledge/AI-Weekly/` — standing destinations for `/daily-github`, `/daily-academic`, `/ai-weekly-digest`
-- `05_Content/Backlog.md` — empty content queue
-- `05_Content/Voice Guide.md` — voice profile template
-- `05_Content/Drafts/`, `05_Content/Published/`, and `05_Content/Archived/` subdirs
+- `04_Knowledge/GitHub/`, `04_Knowledge/Academic/`, `04_Knowledge/AI-Weekly/` — optional module destinations for `/daily-github`, `/daily-academic`, `/ai-weekly-digest`
+- `05_Content/Backlog.md` — optional content queue
+- `05_Content/Voice Guide.md` — optional content voice profile template
+- `05_Content/Drafts/`, `05_Content/Published/`, and `05_Content/Archived/` optional content subdirs
 
 After copy, list what was actually created vs. skipped. Briefly, e.g.:
 
@@ -106,7 +106,7 @@ Present them as: "Here are the four settings in CLAUDE.md that the skills read. 
 Once the user responds, update the Customization table in `<vault>/CLAUDE.md` with Edit (not Write — preserve everything else in the file). The table rows look like:
 
 ```markdown
-| Vault owner name | `Yuhan` | `/meeting`, `/daily-init` |
+| Vault owner name | `You` | `/meeting`, `/daily-init` |
 | Apple Calendar name | `Operator` | `/deadline-plan`, `/quarterly-plan` |
 ```
 
@@ -157,7 +157,7 @@ vault-init never writes `~/.codex/config.toml` itself. If `multi_agent` is missi
 
 ## Step 8 — Day-1 onboarding chain
 
-The vault is scaffolded but empty, and today is the user's day 1. `/daily-init`'s boundary cascade was designed for transitions between existing states (new week, new month, new quarter), not a cold start — so we run the setup layers explicitly instead of hoping downstream boundary logic catches everything.
+The vault is scaffolded but empty, and today is the user's day 1. `/daily-init`'s boundary automation was designed for transitions between existing states (new week, new month, new quarter), not a cold start — so we run the setup layers explicitly instead of hoping downstream boundary logic catches everything.
 
 Present four items in a single prompt:
 
@@ -209,7 +209,7 @@ Vault ready at: <vault_path>
 
 Created:
   - 6 core folders (00_Strategy → 05_Content)
-  - 05_Content/Backlog.md, 05_Content/Voice Guide.md
+  - optional module folders and content templates
   - CLAUDE.md (vault config)
 
 Customized:

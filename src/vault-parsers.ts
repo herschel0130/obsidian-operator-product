@@ -88,7 +88,7 @@ export function parseActiveProjectNote(path: string, markdown: string): ActivePr
   const name = frontmatter.project || projectNameFromPath(path);
   const now = extractHeadingSection(markdown, "Now")
     .split("\n")
-    .map(cleanMarkdownLine)
+    .map(cleanOpenProjectNowLine)
     .filter(Boolean)
     .slice(0, 3);
 
@@ -138,8 +138,9 @@ export function parseDailyNote(markdown: string, exists = markdown.trim().length
 
   const taskLines = [
     extractHeadingSection(markdown, "Tasks"),
-    extractHeadingSectionAtAnyLevel(markdown, "Action Items"),
+    removeNestedHeadingSection(extractHeadingSectionAtAnyLevel(markdown, "Action Items"), "Deferred"),
     extractHeadingSectionAtAnyLevel(markdown, "Next Actions"),
+    extractHeadingSection(markdown, "Capture"),
   ].join("\n");
   const parsedTasks = taskLines
     .split("\n")
@@ -153,7 +154,7 @@ export function parseDailyNote(markdown: string, exists = markdown.trim().length
   ]
     .join("\n")
     .split("\n")
-    .map(cleanMarkdownLine)
+    .map(cleanOpenScheduleLine)
     .filter(Boolean)
     .slice(0, 8);
 
@@ -246,6 +247,34 @@ export function extractHeadingSectionAtAnyLevel(markdown: string, heading: strin
   return section.join("\n").trim();
 }
 
+function removeNestedHeadingSection(markdown: string, heading: string): string {
+  const lines = markdown.split(/\r?\n/);
+  const markerPattern = new RegExp(`^#{1,6}\\s+${escapeRegExp(heading)}\\s*$`, "i");
+  const result: string[] = [];
+  let skipLevel: number | null = null;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const headingMatch = trimmed.match(/^(#{1,6})\s+/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      if (skipLevel !== null && level <= skipLevel) {
+        skipLevel = null;
+      }
+      if (markerPattern.test(trimmed)) {
+        skipLevel = level;
+        continue;
+      }
+    }
+
+    if (skipLevel === null) {
+      result.push(line);
+    }
+  }
+
+  return result.join("\n").trim();
+}
+
 export function cleanMarkdownLine(line: string): string {
   return line
     .replace(/^\s*[-*]\s+\[[^\]]\]\s+/, "")
@@ -295,6 +324,22 @@ function taskLineToActionItem(item: ParsedTaskLine): MarkdownActionItem {
     raw: item.raw,
     text: cleanMarkdownLine(item.text),
   };
+}
+
+function cleanOpenProjectNowLine(line: string): string {
+  const task = parseTaskLine(line);
+  if (task) {
+    return task.checked.trim() === "" ? cleanMarkdownLine(task.text) : "";
+  }
+  return cleanMarkdownLine(line);
+}
+
+function cleanOpenScheduleLine(line: string): string {
+  const task = parseTaskLine(line);
+  if (task) {
+    return task.checked.trim() === "" ? cleanMarkdownLine(task.text) : "";
+  }
+  return cleanMarkdownLine(line);
 }
 
 function parseMeetingDate(text: string, today: Date): { dateIso?: string; timing: MeetingTiming } {

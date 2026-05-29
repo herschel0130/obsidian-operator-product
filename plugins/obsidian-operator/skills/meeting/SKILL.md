@@ -47,13 +47,13 @@ Before processing any transcript (all modes), verify that the user has provided 
 
    > The transcript uses generic speaker labels. To produce accurate notes, I need real names for each speaker. Please provide a mapping, e.g.:
    >
-   > - Speaker 1 → Jason
-   > - Speaker 2 → Yuhan
+   > - Speaker 1 → Alex
+   > - Speaker 2 → Jordan
    >
    > (At minimum, tell me who was in the meeting.)
 
 2. If the user provides names, apply the mapping to speaker labels throughout the transcript before continuing.
-3. If speaker names are already present in the transcript (e.g. `Jason:`, `Yuhan:`) or the user provided them in the invocation, skip this check and proceed.
+3. If speaker names are already present in the transcript (e.g. `Alex:`, `Jordan:`) or the user provided them in the invocation, skip this check and proceed.
 
 Do **not** guess or infer speaker identities from transcript content alone — always confirm with the user.
 
@@ -145,7 +145,7 @@ From the transcript content and any available context, determine:
 
 - **date** — look for a date mentioned in the transcript or ask the user. Format as `YYYY-MM-DD`.
 - **project** — infer from names, topics, or context in the transcript. Cross-reference vault projects in `02_Projects/`. If already determined by Mode 2, use that. If unclear, ask the user.
-- **participants** — use speaker labels from the transcript (e.g. `Speaker 1`, `Jason`, etc.). If names are known from vault context, use real names.
+- **participants** — use speaker labels from the transcript (e.g. `Speaker 1`, named speakers, etc.). If names are known from vault context, use real names.
 - **duration** — if mentioned in the transcript or filename, use it. Otherwise omit.
 - **session** — if the filename or transcript implies a session number, include it. Otherwise omit.
 - **language** — infer from transcript content (e.g. "Mandarin/English" if mixed).
