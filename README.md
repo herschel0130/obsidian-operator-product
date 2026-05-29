@@ -40,7 +40,7 @@ codex login
 
 For normal users, install the Obsidian UI from the release zip:
 
-1. Download `operator-control.zip` from the [latest release](https://github.com/herschel0130/obsidian-operator-product/releases/latest).
+1. Download the versioned `operator-control-<version>.zip` from the [latest release](https://github.com/herschel0130/obsidian-operator-product/releases/latest). The unversioned `operator-control.zip` asset is kept for compatibility.
 2. Unzip it. You should get an `operator-control/` folder.
 3. Move that folder into your vault:
 
@@ -78,16 +78,18 @@ The dashboard will show:
 
 - **Today** from the current daily note: `## Focus`, `### Action Items`, task checkboxes in `## Capture`, `## Schedule`, and the current weekly queue
 - Deferred future items under `#### Deferred` stay out of today's **Next actions** until `/daily-init` promotes them back into the main action list
-- **Start my day** with available-hours inputs that preserve half-hour budgets, a compact multi-line manual-items box, minute-aligned local clock context, and an editable Preview that includes local date, time, timezone, ISO week, quarter, exact target notes, and compact boundary-artifact target checks; its daily guard gives concrete commands plus exact files to check and catches up missing weekly/monthly/quarterly artifacts after the relevant period boundary has passed, weekly shortcuts expose a compact Week field where setup accepts explicit `YYYY-WX`/`YYYY-WXX` targets and review also accepts `last`, annual shortcuts expose a visible Year field where explicit years work for both buttons, vision accepts `next`, review accepts `last`, and shorthand does not stick to the shared field, quarterly/monthly shortcuts expose a compact Period field for `YYYY-QX`, `YYYY-MM`, or bare `MM`, deriving quarters from `YYYY-MM` for plan/review, mapping `YYYY-QX` to that quarter's final monthly pulse before Preview, and making the blank Monthly pulse default show the previous month in the field hint, while advanced prompts keep freeform power but normalize predicted weekly and strategy targets so implicit annual/quarterly commands run with the exact year or quarter shown in Preview
+- **Start my day** as the core concierge: enter available hours, add optional manual items, review the exact prompt and target notes, then run the daily briefing
+- Date-sensitive workflows resolve to concrete days, weeks, months, quarters, and years before execution, so Preview and Run stay aligned
 - Native **Done** and **Carry** actions for visible daily and weekly tasks, editing the source Markdown checkbox instead of creating a separate task database; Carry moves the task out of today's visible actions until the next briefing promotes it
 - Native **Quick Capture** for ideas, tasks, meeting notes, and research questions without leaving Operator Home; pasted multi-line captures become separate Markdown items, and captured task checkboxes appear in today's **Next actions**
 - Active projects from `02_Projects/`, plus `## Now` next actions
 - Current-week meetings and waiting-on items from `Blockers.md`, with native **Done** actions for resolved blockers and completed meetings
 - Native project creation that writes `02_Projects/<Project>/<Project>.md` and `04_Knowledge/<Project>/` directly
-- Collapsed advanced workflows for weekly planning/review, annual vision/review, quarterly planning, AI weekly digest, GitHub/arXiv scans, project sync, deadline plans, meetings, multi-line event lists, content, research, custom prompts, CLI handoff, and legacy slash commands such as `/project-init`
+- Collapsed advanced workflows for weekly planning/review, strategy, project sync, deadline plans, meetings, custom prompts, CLI handoff, and legacy slash commands such as `/project-init`
+- A separate optional modules group for intelligence, academic scans, content workflows, and calendar/event ingestion
 - Collapsed setup health for Codex, skills, optional integrations, and vault initialization state
 - Backend-specific setup checks before every agent Preview, plus disabled-state help beside **Start my day** and inside **More workflows**, so locked agent actions say whether Codex or Claude is missing CLI, login, skills, or vault setup
-- Last-run review with status, summary, raw log, and an expected-note opener for daily, weekly, AI weekly digest, annual, and quarterly workflow outputs when available
+- Last-run review with status, summary, raw log, and an expected-note opener for workflow outputs when available
 
 ### 4. Run the first five-minute flow
 
@@ -161,201 +163,56 @@ Optional integrations are visible in the dashboard instead of failing silently:
 05_Content/             — content backlog, drafts, published, archived, voice guide
 ```
 
-See [CLAUDE.md](skills/vault-init/assets/CLAUDE.md) for full conventions, frontmatter spec, checkbox states, and AI agent instructions.
+See [CLAUDE.md](plugins/obsidian-operator/skills/vault-init/assets/CLAUDE.md) for full conventions, frontmatter spec, checkbox states, and AI agent instructions.
 
 ## Skills Reference
 
-### Setup
+Operator ships the original skill library, but the product surface is layered. Core skills support the default concierge experience; optional modules stay available without becoming required setup.
+
+### Core
 
 | Skill | Description |
 |-------|-------------|
-| `vault-init` | One-shot vault bootstrap — creates the 6-folder structure, copies `CLAUDE.md`, walks through the Customization table, optionally installs `~/.secrets` + the `/meeting` transcription script. Idempotent. Run this first. |
+| `vault-init` | Bootstrap the vault structure and agent config. Run this first. |
+| `daily-init` | Core concierge flow: build today's briefing from vault, project, weekly, blocker, calendar, Gmail, and manual context when available. |
+| `weekly-init` | Create or update the current execution week, Weekly Todo, and Blockers. |
+| `weekly-review` | Synthesize the week and prepare next-week focus. |
+| `meeting-prep` / `meeting` | Prepare agendas, process transcripts, and route decisions/actions. |
+| `project-sync` | Consolidate project knowledge, weekly progress, and strategic signals into the project note. |
 
-### Daily Operations
-
-| Skill | Description |
-|-------|-------------|
-| `daily-init` | Generate today's briefing — syncs completions, gathers email/calendar/vault data, produces action items + time-blocked schedule |
-| `daily-github` | Fetch trending GitHub repos, write full report to knowledge folder, append summary to daily note |
-| `daily-academic` | Scan today's arXiv papers across AI/robotics categories — quality-gated to 3–5 papers/day from established labs/universities or top-venue acceptances, with a PDF deep-read per paper before writing the report |
-
-### Weekly Operations
+### Advanced
 
 | Skill | Description |
 |-------|-------------|
-| `weekly-init` | Create or update target week folder + Weekly Todo — accepts explicit `YYYY-WXX`, carries items from the prior week, injects deadline tasks, populates Blockers from calendar. Merges into existing files without overwriting. |
-| `weekly-review` | AI synthesis of the week — progress, stalled items, patterns, intention tracking, horizon items, next-week focus |
-| `ai-weekly-digest` | Curated AI landscape digest — research trends (aggregated from `/daily-academic` reports), big tech, startups, open-source, landscape. Merges new findings into existing digests. |
+| `quarterly-plan` | Plan, review, or pulse the strategy layer with explicit targets. |
+| `annual-vision` | Create annual vision notes or annual reviews. |
+| `deadline-plan` | Backward-schedule deadline work into weekly and daily execution. |
+| `link-enrich` | Audit and improve vault links and maps of content. |
+| `project-init` | Legacy agent-guided project creation; Operator Home's native **New project** is the normal path. |
+| `deep-research` | Preserved power-user research workflow. It is available from optional/advanced entry points, not required for daily use. |
 
-### Strategic Planning
+### Optional Modules
 
-| Skill | Description |
-|-------|-------------|
-| `quarterly-plan` | Three modes: `init YYYY-QX`, `review YYYY-QX`, `pulse YYYY-MM` for explicit targets. Init and review update existing files rather than aborting. |
-| `annual-vision` | Annual vision or `review YYYY` retrospective with explicit target years. Review without a year targets the current year in December and the previous year otherwise. Reads existing files as baseline for updates. |
+| Module | Skills | When to use |
+|--------|--------|-------------|
+| Intelligence | `ai-weekly-digest`, `daily-github` | AI landscape and open-source monitoring. |
+| Academic | `daily-academic` | arXiv scanning for research-heavy users. |
+| Content | `content-extract`, `content-draft` | Creator workflows for turning notes into publishable drafts. |
+| Calendar/events | `add-events` | macOS Apple Calendar and Reminders ingestion. |
 
-### Knowledge & Synthesis
+Optional modules can be run from **More workflows -> Optional modules** or from the CLI. They are not required for **Start my day** to produce a complete daily operating flow.
 
-| Skill | Description |
-|-------|-------------|
-| `meeting` | Process meeting transcripts (auto-transcribe, chunked, or direct) — produces transcript + knowledge note, routes actions |
-| `meeting-prep` | Generate meeting agenda from project context — reads project note, blockers, weekly progress, deadlines |
-| `project-init` | Scaffold a new project — creates folder structure + project note with frontmatter |
-| `project-sync` | Aggregate knowledge notes + weekly reviews into the project note — Knowledge Base, Weekly Progress, Strategic Signals |
-| `deadline-plan` | Backward-schedule deadlines with ramp algorithm — task queues, automatic progress tracking, weekly allocation |
-| `add-events` | Batch-add events to Apple Calendar + Reminders — stores in `Upcoming Events.md` for pipeline integration, routes current-week events to Blockers |
-| `deep-research` | Multi-agent deep research — decomposes a question into parallel threads, researches each with Opus agents, synthesizes into a detailed knowledge note |
+## System Notes
 
-### Content Engine
+The default daily loop is intentionally small at the product layer:
 
-| Skill | Description |
-|-------|-------------|
-| `content-extract` | Scan yesterday's notes and Substack newsletter emails for publishable insights — appends 0-3 ideas to `05_Content/Backlog.md` with pillar tags. Integrated into `/daily-init` post-briefing. Also includes catch-up pass for unscanned this-week notes. |
-| `content-draft` | Generate platform-specific drafts from backlog items or notes — presents backlog sorted by priority (P1 own thinking > P2 summaries > P3 external). Formats: LinkedIn (delegates to `linkedin-content`), Twitter/X threads, non-technical articles (uses Voice Guide), technical blogs (delegates to `technical-blog-writing`), newsletters |
+1. Open or create the current daily note.
+2. Keep the current week, blockers, and active project context in view.
+3. Catch up missing weekly/monthly/quarterly planning artifacts when the relevant boundary has passed.
+4. Write a concise daily briefing and schedule draft.
+5. Leave optional intelligence, academic, content, and calendar/event modules to explicit user choice.
 
-### Vault Maintenance
-
-| Skill | Description |
-|-------|-------------|
-| `link-enrich` | Three modes: `scan` (audit unlinked mentions, orphans, graph density), `apply` (preview + insert wiki-links), `moc` (generate Map of Content index notes) |
-
-## System Architecture
-
-### How skills work together
-
-```
-                        ┌─────────────────────────────────────────────┐
-                        │      NEW-WEEK BOUNDARY /daily-init          │
-                        │  (first /daily-init of a new ISO week)      │
-                        │                                             │
-                        │  1.  /weekly-review  (close last week)      │
-                        │  1b. /ai-weekly-digest (AI landscape)       │
-                        │  1c. /quarterly-plan pulse (new month)      │
-                        │  1d. /quarterly-plan review (new quarter)   │
-                        │  1e. /quarterly-plan init  (new quarter)    │
-                        │  2.  /weekly-init    (open new week)        │
-                        │  3.  briefing        (today's data)         │
-                        │  4.  /daily-github   (trending repos)       │
-                        │  4b. /daily-academic (arXiv papers)         │
-                        │  5.  /content-extract (content ideas)       │
-                        └─────────────────────────────────────────────┘
-
-                        ┌─────────────────────────────────────────────┐
-                        │      SAME-WEEK /daily-init                  │
-                        │  (subsequent days within same ISO week)     │
-                        │                                             │
-                        │  0.  sync yesterday's [x] → Weekly Todo    │
-                        │      ([-] = dropped, no sync)               │
-                        │  0b. sync [x] → Deadline Plans (task queue) │
-                        │  1.  (skip weekly transition)               │
-                        │  1c. /quarterly-plan pulse (new month)      │
-                        │  2.  /weekly-init (update mode)             │
-                        │  3.  briefing        (today's data)         │
-                        │  4.  /daily-github   (trending repos)       │
-                        │  4b. /daily-academic (arXiv papers)         │
-                        │  5.  /content-extract (content ideas)       │
-                        └─────────────────────────────────────────────┘
-```
-
-### Data flow
-
-```
-Daily notes accumulate in 01_Execution/YYYY-WXX/
-    ↓ [x] completions sync back to Weekly Todo + Blockers automatically
-    ↓ [x] deadline tasks sync back to Deadline Plan task queue + hours
-    ↓ [>] items carry forward to next day's briefing
-    ↓ [>] with future date (e.g. -> 周五 (May 1), → 2026-05-01) → #### Deferred section
-    ↓ [-] items are DROPPED — no sync, no carry-forward, inert
-    ↓
-/meeting routes actions after processing transcripts:
-    → Vault owner's independent actions → Weekly Todo
-    → Cofounder deliverables → Blockers.md ## Waiting On
-    → Meeting-dependent work → Blockers.md ## Meetings
-    ↓
-/daily-init reads Blockers.md + Deadline Plans → surfaces in ### Flags:
-    → Waiting-on items (always), today's meetings + agenda + /meeting reminder
-    → Tomorrow's meetings: auto-runs /meeting-prep if no plan exists
-    → Deadline warnings (🟡/🔴, within 14 days) + task queue health
-    ↓
-/weekly-review reads all daily notes + Weekly Todo + Blockers + projects
-    → writes Weekly Review.md (AI synthesis + suggested next-week todos)
-    → detects horizon items (monthly/quarterly deferrals & deadlines)
-    ↓
-/ai-weekly-digest reads arXiv daily files + GitHub trending files + RSS + web search
-    → writes AI Weekly Digest (research trends + industry), appends summary to Weekly Review
-    ↓
-/weekly-init reads Weekly Review "Todos next week" + uncompleted Weekly Todo
-    → carries them into new week's Weekly Todo
-    → pulls top deadline tasks from task queues into Weekly Todo
-    → carries undelivered Blockers ## Waiting On items
-    → populates ## Meetings from Weekly Review + ICS calendar data
-    ↓
-Cycle repeats
-    ↓
-/quarterly-plan pulse (monthly) reads weekly reviews + horizon items + projects
-    → writes Monthly Pulse, assesses quarterly goals (🟢🟡🔴)
-    ↓
-/quarterly-plan review (end of quarter) reads plan + pulses + weekly reviews
-    → writes Quarterly Review, carries unresolved items forward
-    ↓
-/quarterly-plan init (start of quarter) reads vision + last review
-    → guides goal-setting, writes Quarterly Plan
-    ↓
-/annual-vision reads quarterly reviews + projects
-    → writes annual Vision or Annual Review
-```
-
-### Knowledge pipeline
-
-```
-/meeting-prep → 02_Projects/[P]/Meeting Plan/            (agenda)
-/meeting      → 02_Projects/[P]/Meeting Transcripts/     (raw)
-              → 04_Knowledge/[P]/Meeting Knowledge/       (synthesis)
-              → Weekly Todo + Blockers.md                 (action routing)
-
-/deep-research→ 04_Knowledge/[P or topic]/Research/         (deep research report)
-/deadline-plan→ 02_Projects/[path]/Deadline Plan.md       (ramp schedule + task queue)
-/add-events  → Apple Calendar "Operator"                    (timed + all-day events)
-             → Apple Reminders "Operator"                    (associated deadlines)
-             → 02_Projects/[P]/Upcoming Events.md           (staging for /weekly-init)
-             → 01_Execution/YYYY-WXX/Blockers.md            (current-week only)
-/daily-github    → 04_Knowledge/GitHub/                    (daily trending)
-/daily-academic  → 04_Knowledge/Academic/                  (daily arXiv)
-/ai-weekly-digest → 04_Knowledge/AI-Weekly/               (weekly AI landscape)
-/quarterly-plan   → 00_Strategy/YYYY-QX/                  (plan | review | pulse)
-/annual-vision    → 00_Strategy/                          (vision | annual review)
-
-/project-init → 02_Projects/[P]/ + 04_Knowledge/[P]/     (scaffolding)
-/project-sync → 02_Projects/[P]/[P].md                   (Knowledge Base + Strategic Signals)
-
-/content-extract → 05_Content/Backlog.md                  (content ideas from vault notes + newsletters)
-/content-draft   → 05_Content/Drafts/YYYY-MM-DD-slug/    (LinkedIn, Twitter, article, newsletter)
-```
-
-### Dependency graph
-
-```
-/daily-init ──► /weekly-review (new-week boundary)
-            ──► /ai-weekly-digest (new-week boundary)
-            ──► /quarterly-plan pulse (new-month boundary)
-            ──► /quarterly-plan review (new-quarter boundary)
-            ──► /quarterly-plan init (new-quarter boundary)
-            ──► /weekly-init (always — update mode if exists)
-            ──► /daily-github (post-briefing)
-            ──► /daily-academic (post-briefing, after daily-github)
-            ──► /content-extract (post-briefing, after daily-academic)
-            ──► /meeting-prep (tomorrow's meetings)
-
-/meeting ───► (self-contained: transcript + knowledge + action routing)
-
-/add-events ► (consumed by /weekly-init Step 7d when week arrives)
-
-/weekly-review  (standalone)
-/project-sync   (standalone — pure synthesis)
-/link-enrich    (standalone — vault graph optimizer)
-/content-extract (standalone or via /daily-init post-briefing)
-/content-draft  (standalone — reads backlog or notes, generates drafts)
-```
+For exact target-resolution rules, artifact paths, and advanced CLI behavior, see the [Operator Home Manual](docs/operator-home-manual.md).
 
 ## Customization
 

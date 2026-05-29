@@ -11,7 +11,7 @@ Operator Home is the Obsidian-native front door for Obsidian Operator. It keeps 
 ## Install
 
 1. Install Obsidian desktop.
-2. Download `operator-control.zip` from the [latest release](https://github.com/herschel0130/obsidian-operator-product/releases/latest).
+2. Download the versioned `operator-control-<version>.zip` from the [latest release](https://github.com/herschel0130/obsidian-operator-product/releases/latest). The unversioned `operator-control.zip` asset is kept for compatibility.
 3. Unzip it and move the resulting folder into your vault:
 
 ```text
@@ -91,22 +91,31 @@ Use **Run /project-init** only when you want the legacy agent-guided project set
 Open **More workflows** for less frequent or reasoning-heavy work:
 
 - **Weekly setup / Weekly review** for execution planning and synthesis. Leave **Week** empty for the dashboard default, enter `YYYY-WX` or `YYYY-WXX` to target a specific week. `last` is review-only; Weekly setup treats it as blank and stays on the current ISO week.
-- **Annual vision / Annual review / Quarter plan / Monthly pulse / Quarter review** for the strategic layer from `00_Strategy/`. Annual buttons use the visible **Year** field. A bare `YYYY` works for both buttons; `next` is vision-only, and `last` is review-only. If **Year** is blank, Annual vision targets the current year; Annual review targets the current year in December and the previous year otherwise. Shorthand is resolved only for that run and does not stick in the shared field. Quarterly buttons use the compact **Period** field: enter `YYYY-QX` or `YYYY-MM` for plan/review targets, and `YYYY-QX`, `YYYY-MM`, or `MM` for monthly pulse targets. A quarter value maps to that quarter's final monthly pulse; bare `MM` is resolved to a concrete `YYYY-MM` before Preview, using the previous year if that month would otherwise be in the future. If **Period** is blank, Monthly pulse targets the previous month before Preview, and the field hint shows that month explicitly.
+- **Annual vision / Annual review / Quarter plan / Monthly pulse / Quarter review** for the strategic layer from `00_Strategy/`.
 - **Sync / Deadline plan** for project-level agent work.
 - **Prep / Process meeting** for agendas, transcripts, decisions, and actions. Transcript input accepts pasted multi-line text or a local path.
-- **Extract ideas / Draft / Deep research** for content and research workflows.
-- **AI weekly / GitHub trends / Academic scan** for optional intelligence automations.
-- **Add events** for routing calendar and reminder commitments into the weekly system. Paste one event or deadline per line.
 - **Agent prompt / CLI command** for raw slash commands or freeform prompts.
 - **Copy CLI handoff** copies a runnable Codex or Claude command for the selected backend using the same enhanced prompt and resolved CLI path shown by Setup health, so power users can continue in Terminal without retyping the prompt. If the prompt box is empty, both handoff and Preview default to `/daily-init` with the dashboard's current available-hours setting.
 
-Every agent workflow checks setup before opening Preview, then shows the exact prompt, target notes, expected output note when known, and likely read/write areas before launching Codex or Claude. Built-in workflows include local date, time, timezone, ISO week, and quarter as metadata, not manual tasks, so daily scheduling, weekly planning, annual vision, quarterly planning, and research runs do not depend on hidden agent clock assumptions. **Start my day** keeps the full boundary guard in the prompt, preserves multi-line manual items as separate lines, and includes the concrete target week, month, quarter, command, and artifact path for each boundary workflow while telling the agent to run each boundary command only when both its catch-up date condition and missing-artifact condition are true. Weekly, monthly, and quarterly catch-up remains eligible after the first day of the new period, so users do not miss reviews or pulses just because they skipped a day. The Preview keeps this compact on ordinary days, then expands the obvious boundary actions on week/month/quarter starts.
+Open **Optional modules** inside **More workflows** for personal-interest workflows:
+
+- **Intelligence** runs AI weekly, GitHub trends, or academic scans when those feeds are useful to you.
+- **Content** extracts ideas, drafts from a topic or backlog item, or launches the preserved deep-research workflow.
+- **Calendar / events** routes pasted commitments into the weekly system. Paste one event or deadline per line.
+
+Every agent workflow checks setup before opening Preview, then shows the exact prompt, target notes, expected output note when known, and likely read/write areas before launching Codex or Claude. Built-in workflows include local date, time, timezone, ISO week, and quarter as metadata, not manual tasks, so daily scheduling, weekly planning, annual vision, and quarterly planning do not depend on hidden agent clock assumptions.
+
+**Start my day** is the core concierge. It preserves multi-line manual items, keeps weekly/monthly/quarterly planning current when needed, and lists concrete target notes before execution. Optional intelligence, academic, content, and calendar/event modules do not run as invisible side effects; run them deliberately from **Optional modules** or ask for them in the prompt.
 
 The dashboard header clock refreshes on local minute boundaries. If the app stays open across midnight, Operator refreshes the dashboard so the visible daily note, week, quarter, and shortcut defaults move to the new local date.
 
 The same daily pre-flight guard is added when you type `/daily-init ...` in **Agent prompt / CLI command** and run it from the Preview.
 
-For daily, weekly, AI weekly digest, annual, and quarterly workflows, Operator also predicts the main output note. Fixed weekly, AI weekly, and strategy shortcuts emit explicit target weeks, years, months, and quarters; weekly shortcuts take the visible **Week** field when filled, with `last` resolved only for Weekly review, annual shortcuts resolve the visible **Year** field before Preview, with `next` resolved only for Annual vision and `last` resolved only for Annual review, quarterly shortcuts take the visible **Period** field when filled. **Agent prompt / CLI command** preserves freeform prompts, but normalizes predicted weekly and strategy slash commands so the prompt you run contains the same concrete target shown in Preview: `/weekly-review 2026-W3` runs as `2026-W03`, `/weekly-review last week` resolves to the previous ISO week, `/annual-vision review` runs as `review YYYY`, `/annual-vision review next` remains review-mode and resolves through review defaults unless an explicit year is supplied, `/quarterly-plan init` runs as `init YYYY-QX`, `/quarterly-plan review` runs as the previous quarter, and `/quarterly-plan pulse 2026-Q2` runs as `pulse 2026-06`. If you edit the Preview, the title, expected note, targets, read/write areas, and boundary notes refresh to match the edited prompt. If you leave it open across a clock boundary, Operator keeps that expected note aligned with the `Local date` already embedded in the prompt. If you accidentally clear the Preview prompt, Run keeps the original prompt instead of launching an empty `/` command. The metadata block is not treated as command arguments, so a Monday weekly review still targets the prior week and a quarterly review still targets the prior quarter. After a successful run, it opens that note when present; **Last Run** keeps an **Open expected note** button for quick review. Monthly pulse paths are based on the target month, so January and quarter-boundary runs still open the previous year's Q4 pulse when appropriate.
+## Advanced target resolution
+
+For daily, weekly, AI weekly digest, annual, and quarterly workflows, Operator predicts the main output note. Weekly shortcuts take the visible **Week** field when filled; `last` is resolved only for Weekly review. Annual shortcuts resolve the visible **Year** field before Preview; `next` is vision-only and `last` is review-only. Quarterly shortcuts take the visible **Period** field when filled; `YYYY-QX`, `YYYY-MM`, and bare `MM` values are resolved before Preview.
+
+**Agent prompt / CLI command** preserves freeform prompts, but normalizes predicted weekly and strategy slash commands so the prompt you run contains the same concrete target shown in Preview. If you edit the Preview, the title, expected note, targets, read/write areas, and boundary notes refresh to match the edited prompt. If you leave it open across a clock boundary, Operator keeps that expected note aligned with the `Local date` already embedded in the prompt. If you accidentally clear the Preview prompt, Run keeps the original prompt instead of launching an empty `/` command. After a successful run, **Last Run** keeps an **Open expected note** button when a target path is known.
 
 ## Troubleshooting
 

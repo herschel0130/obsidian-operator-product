@@ -52,13 +52,13 @@ export function buildStartDaySpec(hours: number, manualItems: string, date = new
       "01_Execution/ current and recent daily/weekly notes",
       "02_Projects/ active project notes and deadline plans",
       "00_Strategy/ quarterly and annual planning notes",
-      "Gmail, calendar, GitHub, arXiv when configured",
+      "Gmail and calendar when configured; optional modules only when explicitly run",
     ],
     writeAreas: [
       `Daily note: ${dailyNotePath}`,
       `Weekly Todo: ${weekFolder}/Weekly Todo.md`,
       `Blockers: ${weekFolder}/Blockers.md`,
-      "Knowledge notes under 04_Knowledge/ and content ideas in 05_Content/Backlog.md when configured",
+      "Optional module outputs only when explicitly enabled or run from More workflows",
     ],
     expectedOpenPath: dailyNotePath,
     targetNotes: [
@@ -430,21 +430,19 @@ function formatDailyPreflightGuard(date = new Date()): string {
     "Daily pre-flight guard:",
     "Do not rely on CLI hooks being available in this Obsidian-launched run.",
     "Evaluate these boundary conditions before writing today's briefing, and run a boundary command only when both its date condition and missing-artifact condition are true.",
-    "- Weekly close/digest date condition: current ISO week is after the target week, so catch-up runs later in the week are eligible.",
+    "- Weekly close date condition: current ISO week is after the target week, so catch-up runs later in the week are eligible.",
     "- Monthly pulse date condition: current month is after the target month, so catch-up runs after the first day are eligible.",
     "- Quarter review/plan date condition: current quarter is after the review target and the current quarter has begun, so catch-up runs after the first day are eligible.",
     "Do not run a future-period boundary command even if its artifact is missing.",
-    `Execution order for eligible missing artifacts: /weekly-review ${targets.lastWeek}, /ai-weekly-digest ${targets.lastWeek}, /quarterly-plan pulse ${targets.lastMonth}, /quarterly-plan review ${targets.lastQuarter}, /quarterly-plan init ${targets.currentQuarter}, then always run /weekly-init ${targets.currentWeek}.`,
+    `Execution order for eligible missing artifacts: /weekly-review ${targets.lastWeek}, /quarterly-plan pulse ${targets.lastMonth}, /quarterly-plan review ${targets.lastQuarter}, /quarterly-plan init ${targets.currentQuarter}, then always run /weekly-init ${targets.currentWeek}.`,
     "Use these concrete targets when a boundary check is date-eligible and its artifact is missing:",
     `- Last week review: /weekly-review ${targets.lastWeek}`,
-    `- Last week AI digest: /ai-weekly-digest ${targets.lastWeek}`,
     `- Last month pulse: /quarterly-plan pulse ${targets.lastMonth}`,
     `- Last quarter review: /quarterly-plan review ${targets.lastQuarter}`,
     `- Current quarter plan: /quarterly-plan init ${targets.currentQuarter}`,
     `- Current week setup: /weekly-init ${targets.currentWeek}`,
     "Check exact artifacts before deciding a boundary run is missing:",
     `- Weekly review artifact: ${artifacts.weeklyReview}`,
-    `- AI weekly artifact: ${artifacts.aiWeeklyDigest}`,
     `- Monthly pulse artifact: ${artifacts.monthlyPulse}`,
     `- Quarterly review artifact: ${artifacts.quarterlyReview}`,
     `- Quarterly plan artifact: ${artifacts.quarterlyPlan}`,
@@ -477,7 +475,6 @@ function getDailyBoundaryArtifacts(
   targets = getDailyBoundaryTargets(date),
 ): {
   weeklyReview: string;
-  aiWeeklyDigest: string;
   monthlyPulse: string;
   quarterlyReview: string;
   quarterlyPlan: string;
@@ -487,7 +484,6 @@ function getDailyBoundaryArtifacts(
   const lastMonthNumber = String(lastMonth.getMonth() + 1).padStart(2, "0");
   return {
     weeklyReview: `01_Execution/${targets.lastWeek}/Weekly Review.md`,
-    aiWeeklyDigest: `04_Knowledge/AI-Weekly/${targets.lastWeek} - AI Weekly Digest.md`,
     monthlyPulse: `00_Strategy/${lastMonthQuarter}/Monthly Pulse - ${lastMonthNumber}.md`,
     quarterlyReview: `00_Strategy/${targets.lastQuarter}/Quarterly Review.md`,
     quarterlyPlan: `00_Strategy/${targets.currentQuarter}/Quarterly Plan.md`,
@@ -509,9 +505,9 @@ function getDailyPreviewRunNotes(
   const monthlyBoundaryDay = date.getDate() === 1;
   const quarterlyBoundaryDay = monthlyBoundaryDay && [0, 3, 6, 9].includes(date.getMonth());
   notes.push("Pre-flight may catch up missing prior-period artifacts after a week, month, or quarter boundary has passed.");
-  notes.push(`Pre-flight target checks: /weekly-review ${targets.lastWeek}, /ai-weekly-digest ${targets.lastWeek}, /quarterly-plan pulse ${targets.lastMonth}, /quarterly-plan review ${targets.lastQuarter}, /quarterly-plan init ${targets.currentQuarter}.`);
+  notes.push(`Pre-flight target checks: /weekly-review ${targets.lastWeek}, /quarterly-plan pulse ${targets.lastMonth}, /quarterly-plan review ${targets.lastQuarter}, /quarterly-plan init ${targets.currentQuarter}.`);
   if (weeklyBoundaryDay) {
-    notes.push(`Pre-flight may close last week: /weekly-review ${targets.lastWeek}, then /ai-weekly-digest ${targets.lastWeek}.`);
+    notes.push(`Pre-flight may close last week: /weekly-review ${targets.lastWeek}.`);
   }
   if (monthlyBoundaryDay) {
     notes.push(`Pre-flight may close last month: /quarterly-plan pulse ${targets.lastMonth}.`);

@@ -1,6 +1,6 @@
 ---
 name: content-extract
-description: "TRIGGER for /content-extract, or when the user wants to find content ideas, mine notes for posts, or asks 'what should I write about'. Also auto-runs from /daily-init. Scans yesterday's vault notes and newsletter emails. NOT for drafting (use /content-draft)."
+description: "TRIGGER for /content-extract, or when the user wants to find content ideas, mine notes for posts, or asks 'what should I write about'. Optional content module. Scans vault notes and newsletter emails. NOT for drafting (use /content-draft)."
 ---
 
 Scan yesterday's notes for publishable insights and append content suggestions to the backlog.

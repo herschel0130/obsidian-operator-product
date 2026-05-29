@@ -675,7 +675,7 @@ class OperatorDashboardView extends ItemView {
 
     section.createEl("p", {
       cls: "operator-help",
-      text: "Start my day also runs the boundary cascade when needed: weekly review/setup, AI weekly digest, monthly pulse, and quarterly plan/review.",
+      text: "Start my day keeps weekly, monthly, and quarterly planning current when needed.",
     });
 
     if (!canRun) {
@@ -888,7 +888,10 @@ class OperatorDashboardView extends ItemView {
       }
     });
 
-    const content = createWorkflowCard(grid, "Content / research", "Mine notes, draft, or run a deeper research brief.");
+    const optionalSection = createDisclosureSection(section, "Optional modules", "Enable interest-specific workflows deliberately; they are not required for the daily concierge.");
+    const optionalModules = optionalSection.createDiv({ cls: "operator-workflow-grid" });
+
+    const content = createWorkflowCard(optionalModules, "Content", "Mine notes, draft, or run a deeper research brief when this workflow fits your day.");
     const topicInput = createInlineInput(content, "Topic or backlog item", "");
     createAgentWorkflowButton(content, "sparkles", "Extract ideas", () => {
       void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("content-extract"));
@@ -906,7 +909,7 @@ class OperatorDashboardView extends ItemView {
       }
     });
 
-    const intelligence = createWorkflowCard(grid, "Intelligence", "Run the optional research automations behind the daily and weekly system.");
+    const intelligence = createWorkflowCard(optionalModules, "Intelligence", "Run optional GitHub, arXiv, and AI landscape scans.");
     const intelligenceInput = createInlineInput(intelligence, "Filter", "last, rust weekly 15, or robotics");
     createAgentWorkflowButton(intelligence, "newspaper", "AI weekly", () => {
       void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("ai-weekly-digest", intelligenceInput.value));
@@ -918,7 +921,7 @@ class OperatorDashboardView extends ItemView {
       void this.plugin.previewAndRunWorkflow(buildWorkflowSpec("daily-academic", intelligenceInput.value));
     });
 
-    const events = createWorkflowCard(grid, "Calendar / events", "Batch-add commitments so weekly setup can route them into Blockers and project notes.");
+    const events = createWorkflowCard(optionalModules, "Calendar / events", "Batch-add commitments so weekly setup can route them into Blockers and project notes.");
     const eventsInput = createBlockInput(events, "Events", "Paste one event or deadline per line");
     createAgentWorkflowButton(events, "calendar-plus", "Add events", () => {
       const eventsText = requireInput(eventsInput, "event details");
@@ -1418,11 +1421,11 @@ function renderStatusTile(
   detail: string,
   optional = false,
 ): void {
-  const tile = parent.createDiv({ cls: `operator-status-tile is-${state}` });
+  const visualState = optional && state !== "ready" ? "optional" : state;
+  const tile = parent.createDiv({ cls: `operator-status-tile is-${visualState}` });
   const header = tile.createDiv({ cls: "operator-status-title" });
   header.createSpan({ text: label });
-  const chipText = optional && state !== "ready" ? "optional" : state;
-  header.createSpan({ cls: "operator-chip", text: chipText });
+  header.createSpan({ cls: `operator-chip is-${visualState}`, text: visualState === "optional" ? "optional" : state });
   tile.createEl("p", { text: detail });
 }
 

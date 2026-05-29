@@ -130,7 +130,7 @@ test("workflow previews name exact daily and weekly write targets", () => {
     "Daily note: 01_Execution/2026-W22/2026-05-28.md",
     "Weekly Todo: 01_Execution/2026-W22/Weekly Todo.md",
     "Blockers: 01_Execution/2026-W22/Blockers.md",
-    "Knowledge notes under 04_Knowledge/ and content ideas in 05_Content/Backlog.md when configured",
+    "Optional module outputs only when explicitly enabled or run from More workflows",
   ]);
   assert.deepEqual(buildWorkflowSpec("weekly-init", "", date).writeAreas, [
     "Weekly Todo: 01_Execution/2026-W22/Weekly Todo.md",
@@ -212,6 +212,41 @@ test("daily-init skill documents catch-up boundary triggers", () => {
   assert.match(skill, /catch-up runs later in the week are eligible/);
   assert.match(skill, /catch-up runs after the first day are eligible/);
   assert.doesNotMatch(skill, /different ISO week[\s\S]*most recent daily note/);
+});
+
+test("daily-init keeps optional intelligence and content modules opt-in", () => {
+  const skill = readFileSync("plugins/obsidian-operator/skills/daily-init/SKILL.md", "utf8");
+  const hook = readFileSync("plugins/obsidian-operator/hooks/preflight-enforce.sh", "utf8");
+
+  assert.match(skill, /Optional Modules/);
+  assert.match(skill, /Do not run these modules unless the user explicitly enabled or requested them/);
+  assert.doesNotMatch(skill, /Then automatically run `\/daily-github`/);
+  assert.doesNotMatch(skill, /After `\/daily-github` has run, automatically run `\/daily-academic`/);
+  assert.doesNotMatch(skill, /After `\/daily-academic` has run, invoke `\/content-extract`/);
+  assert.doesNotMatch(hook, /AI Weekly Digest/);
+  assert.doesNotMatch(hook, /\/ai-weekly-digest/);
+});
+
+test("product docs keep first-run overview out of implementation internals", () => {
+  const readme = readFileSync("README.md", "utf8");
+  const manual = readFileSync("docs/operator-home-manual.md", "utf8");
+
+  assert.doesNotMatch(readme, /boundary cascade/i);
+  assert.doesNotMatch(readme, /minute-aligned local clock context/i);
+  assert.doesNotMatch(readme, /weekly shortcuts expose/i);
+  assert.doesNotMatch(readme, /quarterly\/monthly shortcuts expose/i);
+  assert.match(manual, /Advanced target resolution/);
+});
+
+test("operator home keeps optional modules behind an explicit workflow group", () => {
+  const source = readFileSync("src/main.ts", "utf8");
+
+  assert.doesNotMatch(source, /boundary cascade/i);
+  assert.match(source, /Start my day keeps weekly, monthly, and quarterly planning current when needed\./);
+  assert.match(source, /createDisclosureSection\(section, "Optional modules"/);
+  assert.match(source, /createWorkflowCard\(optionalModules, "Intelligence"/);
+  assert.match(source, /createWorkflowCard\(optionalModules, "Content"/);
+  assert.match(source, /createWorkflowCard\(optionalModules, "Calendar \/ events"/);
 });
 
 test("parses active project notes from frontmatter and ## Now", () => {
@@ -535,7 +570,9 @@ test("setup controls explain disabled setup actions", () => {
   const source = readFileSync("src/main.ts", "utf8");
 
   assert.match(source, /createDisclosureSection\(root, "Setup health", "Selected backend readiness first; optional integrations are labeled optional\."\)/);
-  assert.match(source, /const chipText = optional && state !== "ready" \? "optional" : state/);
+  assert.match(source, /const visualState = optional && state !== "ready" \? "optional" : state/);
+  assert.match(source, /operator-status-tile is-\$\{visualState\}/);
+  assert.match(source, /operator-chip is-\$\{visualState\}/);
   assert.match(source, /const setupLockHelp = this\.plugin\.activeRun[\s\S]*Use Cancel run before changing setup\./);
   assert.match(source, /const codexSkillsHelp = status\.codexCli !== "ready"[\s\S]*Set a working Codex executable before installing Codex skills\./);
   assert.match(source, /codexSkillsDisabled, codexSkillsHelp/);
@@ -614,19 +651,19 @@ test("builds editable workflow prompt specs", () => {
     start.prompt,
     /Evaluate these boundary conditions before writing today's briefing, and run a boundary command only when both its date condition and missing-artifact condition are true\./,
   );
-  assert.match(start.prompt, /Weekly close\/digest date condition: current ISO week is after the target week, so catch-up runs later in the week are eligible/);
+  assert.match(start.prompt, /Weekly close date condition: current ISO week is after the target week, so catch-up runs later in the week are eligible/);
   assert.match(start.prompt, /Monthly pulse date condition: current month is after the target month, so catch-up runs after the first day are eligible/);
   assert.match(start.prompt, /Quarter review\/plan date condition: current quarter is after the review target and the current quarter has begun, so catch-up runs after the first day are eligible/);
-  assert.match(start.prompt, /Execution order for eligible missing artifacts: \/weekly-review 2026-W20, \/ai-weekly-digest 2026-W20, \/quarterly-plan pulse 2026-04, \/quarterly-plan review 2026-Q1, \/quarterly-plan init 2026-Q2, then always run \/weekly-init 2026-W21\./);
+  assert.match(start.prompt, /Execution order for eligible missing artifacts: \/weekly-review 2026-W20, \/quarterly-plan pulse 2026-04, \/quarterly-plan review 2026-Q1, \/quarterly-plan init 2026-Q2, then always run \/weekly-init 2026-W21\./);
   assert.match(start.prompt, /Check exact artifacts before deciding a boundary run is missing:/);
   assert.match(start.prompt, /Weekly review artifact: 01_Execution\/2026-W20\/Weekly Review\.md/);
-  assert.match(start.prompt, /AI weekly artifact: 04_Knowledge\/AI-Weekly\/2026-W20 - AI Weekly Digest\.md/);
+  assert.doesNotMatch(start.prompt, /AI weekly artifact/);
   assert.match(start.prompt, /Monthly pulse artifact: 00_Strategy\/2026-Q2\/Monthly Pulse - 04\.md/);
   assert.match(start.prompt, /Quarterly review artifact: 00_Strategy\/2026-Q1\/Quarterly Review\.md/);
   assert.match(start.prompt, /Quarterly plan artifact: 00_Strategy\/2026-Q2\/Quarterly Plan\.md/);
   assert.doesNotMatch(start.prompt, /Run missing weekly, monthly, and quarterly boundary workflows/);
   assert.match(start.prompt, /\/weekly-review 2026-W20/);
-  assert.match(start.prompt, /\/ai-weekly-digest 2026-W20/);
+  assert.doesNotMatch(start.prompt, /\/ai-weekly-digest 2026-W20/);
   assert.match(start.prompt, /\/quarterly-plan pulse 2026-04/);
   assert.match(start.prompt, /\/quarterly-plan review 2026-Q1/);
   assert.match(start.prompt, /\/quarterly-plan init 2026-Q2/);
@@ -645,27 +682,27 @@ test("builds editable workflow prompt specs", () => {
   assert.equal(start.search, true);
   assert.deepEqual(start.runNotes, [
     "Pre-flight may catch up missing prior-period artifacts after a week, month, or quarter boundary has passed.",
-    "Pre-flight target checks: /weekly-review 2026-W20, /ai-weekly-digest 2026-W20, /quarterly-plan pulse 2026-04, /quarterly-plan review 2026-Q1, /quarterly-plan init 2026-Q2.",
+    "Pre-flight target checks: /weekly-review 2026-W20, /quarterly-plan pulse 2026-04, /quarterly-plan review 2026-Q1, /quarterly-plan init 2026-Q2.",
     "Always opens target week with /weekly-init 2026-W21 before writing today's briefing.",
   ]);
 
   const mondayStart = buildStartDaySpec(6, "", new Date("2026-05-25T09:00:00"));
   assert.deepEqual(mondayStart.runNotes, [
     "Pre-flight may catch up missing prior-period artifacts after a week, month, or quarter boundary has passed.",
-    "Pre-flight target checks: /weekly-review 2026-W21, /ai-weekly-digest 2026-W21, /quarterly-plan pulse 2026-04, /quarterly-plan review 2026-Q1, /quarterly-plan init 2026-Q2.",
-    "Pre-flight may close last week: /weekly-review 2026-W21, then /ai-weekly-digest 2026-W21.",
+    "Pre-flight target checks: /weekly-review 2026-W21, /quarterly-plan pulse 2026-04, /quarterly-plan review 2026-Q1, /quarterly-plan init 2026-Q2.",
+    "Pre-flight may close last week: /weekly-review 2026-W21.",
     "Always opens target week with /weekly-init 2026-W22 before writing today's briefing.",
   ]);
 
   const newYearDay = buildStartDaySpec(6, "", new Date("2026-01-01T09:00:00"));
   assert.match(newYearDay.prompt, /\/weekly-review 2025-W52/);
-  assert.match(newYearDay.prompt, /\/ai-weekly-digest 2025-W52/);
+  assert.doesNotMatch(newYearDay.prompt, /\/ai-weekly-digest 2025-W52/);
   assert.match(newYearDay.prompt, /\/quarterly-plan pulse 2025-12/);
   assert.match(newYearDay.prompt, /\/quarterly-plan review 2025-Q4/);
   assert.match(newYearDay.prompt, /\/quarterly-plan init 2026-Q1/);
   assert.deepEqual(newYearDay.runNotes, [
     "Pre-flight may catch up missing prior-period artifacts after a week, month, or quarter boundary has passed.",
-    "Pre-flight target checks: /weekly-review 2025-W52, /ai-weekly-digest 2025-W52, /quarterly-plan pulse 2025-12, /quarterly-plan review 2025-Q4, /quarterly-plan init 2026-Q1.",
+    "Pre-flight target checks: /weekly-review 2025-W52, /quarterly-plan pulse 2025-12, /quarterly-plan review 2025-Q4, /quarterly-plan init 2026-Q1.",
     "Pre-flight may close last month: /quarterly-plan pulse 2025-12.",
     "Pre-flight may close/open quarter boundaries: /quarterly-plan review 2025-Q4, then /quarterly-plan init 2026-Q1.",
     "Always opens target week with /weekly-init 2026-W01 before writing today's briefing.",
@@ -819,7 +856,7 @@ test("builds editable workflow prompt specs", () => {
   assert.match(typedDaily.prompt, /\/weekly-review 2026-W20/);
   assert.deepEqual(typedDaily.runNotes, [
     "Pre-flight may catch up missing prior-period artifacts after a week, month, or quarter boundary has passed.",
-    "Pre-flight target checks: /weekly-review 2026-W20, /ai-weekly-digest 2026-W20, /quarterly-plan pulse 2026-04, /quarterly-plan review 2026-Q1, /quarterly-plan init 2026-Q2.",
+    "Pre-flight target checks: /weekly-review 2026-W20, /quarterly-plan pulse 2026-04, /quarterly-plan review 2026-Q1, /quarterly-plan init 2026-Q2.",
     "Always opens target week with /weekly-init 2026-W21 before writing today's briefing.",
   ]);
 

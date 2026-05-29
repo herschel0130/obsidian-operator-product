@@ -134,13 +134,13 @@ If `00_Strategy/YYYY-QX/Quarterly Plan.md` already exists, switch to **update mo
 
 ### Step 4: Guide goal-setting
 
-**Auto-mode skip (CRITICAL):** When this skill is auto-triggered by `/daily-init` (Pre-Flight Step 1e), **skip the interactive presentation** and proceed directly to Step 5. Write the Quarterly Plan with **draft objectives sourced from**:
+**Auto-mode skip:** When this skill is auto-triggered by `/daily-init` (Pre-Flight Step 1e), skip the interactive presentation and proceed directly to Step 5. Write the Quarterly Plan with **draft objectives sourced from**:
 1. Carried horizon items from last quarter's monthly pulses
 2. Last quarter's review's "Suggested next quarter focus" (if exists)
 3. Annual Vision goals mapped to this quarter (read `00_Strategy/YYYY Vision.md` if exists)
 4. Active project notes' `## Now` sections
 
-The auto-generated plan must include a `## ⚠️ TODO: User Review` block at the top: "Objectives drafted in auto-mode by the new-quarter trigger. Review and adjust manually — re-run `/quarterly-plan init` interactively to lock final objectives." This makes the draft visible + invites the user to override. Surfacing interactive confirmations during auto-trigger causes the parent `/daily-init` to flag-and-skip the trigger entirely (regression analog to the April 2026 pulse miss).
+The auto-generated plan must include a `## ⚠️ TODO: User Review` block at the top: "Objectives drafted in auto-mode by the new-quarter trigger. Review and adjust manually — re-run `/quarterly-plan init` interactively to lock final objectives." This makes the draft visible and invites the user to override. Surfacing interactive confirmations during auto-trigger can cause the parent `/daily-init` to defer the boundary check, so auto-mode writes a reviewable draft instead.
 
 **Manual-mode (interactive — when user invokes `/quarterly-plan init` directly):** Present to user:
 - Annual goals relevant to this quarter (from Vision)

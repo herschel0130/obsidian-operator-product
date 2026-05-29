@@ -2,6 +2,7 @@ import { strict as assert } from "node:assert";
 import test from "node:test";
 import {
   canRunBackendWorkflows,
+  detectClaudeSkillsFromSources,
   formatWorkflowLockHelp,
   formatWorkflowUnavailableHelp,
   getBackendReadiness,
@@ -38,6 +39,39 @@ test("Claude backend reports missing Claude Operator skills", () => {
   assert.equal(readiness.ready, false);
   assert.deepEqual(readiness.blockers, ["Claude Operator skills"]);
   assert.match(readiness.helpText, /Claude Operator skills/);
+});
+
+test("Claude skills detection treats marketplace-only config as warning", () => {
+  assert.equal(detectClaudeSkillsFromSources([
+    JSON.stringify({
+      marketplaces: {
+        "obsidian-operator": {
+          source: "herschel0130/obsidian-operator-product",
+          enabled: true,
+        },
+      },
+    }),
+  ], false), "warning");
+
+  assert.equal(detectClaudeSkillsFromSources([
+    JSON.stringify({
+      plugins: {
+        "obsidian-operator": {
+          enabled: true,
+        },
+      },
+    }),
+  ], false), "ready");
+
+  assert.equal(detectClaudeSkillsFromSources([
+    '[marketplaces."obsidian-operator"]\nenabled = true\n',
+  ], false), "warning");
+  assert.equal(detectClaudeSkillsFromSources([
+    '[plugins."obsidian-operator"]\nenabled = true\n',
+  ], false), "ready");
+
+  assert.equal(detectClaudeSkillsFromSources([], true), "warning");
+  assert.equal(detectClaudeSkillsFromSources([], false), "missing");
 });
 
 test("workflow lock help is backend-specific", () => {

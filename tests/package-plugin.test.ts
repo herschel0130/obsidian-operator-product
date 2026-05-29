@@ -37,3 +37,26 @@ test("package script creates an Obsidian plugin zip with the plugin folder", () 
     "operator-control/styles.css",
   ]);
 });
+
+test("package script creates a versioned zip for default release packaging", () => {
+  const root = mkdtempSync(join(tmpdir(), "operator-package-versioned-"));
+
+  mkdirSync(root, { recursive: true });
+  writeFileSync(join(root, "package.json"), JSON.stringify({ version: "9.8.7" }));
+  writeFileSync(join(root, "manifest.json"), JSON.stringify({ id: "operator-control" }));
+  writeFileSync(join(root, "main.js"), "console.log('operator');\n");
+  writeFileSync(join(root, "styles.css"), ".operator-control {}\n");
+
+  const packageResult = spawnSync(process.execPath, [
+    "scripts/package-obsidian-plugin.mjs",
+    "--root",
+    root,
+  ], {
+    cwd: process.cwd(),
+    encoding: "utf8",
+  });
+
+  assert.equal(packageResult.status, 0, packageResult.stderr || packageResult.stdout);
+  assert.equal(existsSync(join(root, "dist", "operator-control.zip")), true);
+  assert.equal(existsSync(join(root, "dist", "operator-control-9.8.7.zip")), true);
+});
