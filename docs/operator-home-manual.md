@@ -12,14 +12,11 @@ Operator Home is the Obsidian-native front door for Obsidian Operator. It keeps 
 
 1. Install Obsidian desktop.
 2. Download the versioned `operator-control-<version>.zip` from the [latest release](https://github.com/herschel0130/obsidian-operator-product/releases/latest). The unversioned `operator-control.zip` asset is kept for compatibility.
-3. Unzip it and move the resulting folder into your vault:
+3. Unzip it and move the resulting `operator-control/` folder into your vault's plugins folder:
 
 ```text
 <your vault>/.obsidian/plugins/
   operator-control/
-    manifest.json
-    main.js
-    styles.css
 ```
 
 4. In Obsidian, enable **Community plugins**, then enable **Operator**.
@@ -129,4 +126,4 @@ For daily, weekly, AI weekly digest, annual, and quarterly workflows, Operator p
 
 ## Safety
 
-Operator launches Codex with `workspace-write` permissions in the current vault by default. It does not use full-disk or dangerous sandbox bypass settings by default. Native actions write only the specific Markdown files and folders needed for the selected action.
+Operator launches the selected backend with vault-scoped write permissions in the current vault by default. It does not use full-disk or dangerous sandbox bypass settings by default. Native actions write only the specific Markdown files and folders needed for the selected action.

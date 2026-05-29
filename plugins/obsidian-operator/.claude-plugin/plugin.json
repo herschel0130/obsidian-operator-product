@@ -1,6 +1,6 @@
 {
   "name": "obsidian-operator",
-  "version": "2.0.12",
+  "version": "2.0.13",
   "description": "AI-native personal operating system for Obsidian — core concierge skills for vault setup, daily briefings, weekly reviews, strategy, projects, meetings, and optional intelligence/content modules. Supports Claude Code and Codex CLI.",
   "author": {
     "name": "Yuhan Wang",

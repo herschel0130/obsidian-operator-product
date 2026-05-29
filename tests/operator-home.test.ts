@@ -212,6 +212,8 @@ test("daily-init skill documents catch-up boundary triggers", () => {
 
   assert.match(skill, /catch-up runs later in the week are eligible/);
   assert.match(skill, /catch-up runs after the first day are eligible/);
+  assert.doesNotMatch(skill, /using the path resolved from `obsidian daily:path`/);
+  assert.match(skill, /open the computed daily note path in Obsidian/);
   assert.doesNotMatch(skill, /different ISO week[\s\S]*most recent daily note/);
 });
 
@@ -233,7 +235,21 @@ test("daily-init keeps optional intelligence and content modules opt-in", () => 
 test("product docs keep first-run overview out of implementation internals", () => {
   const readme = readFileSync("README.md", "utf8");
   const manual = readFileSync("docs/operator-home-manual.md", "utf8");
+  const releaseNotes = readFileSync("docs/release-v0.4.0.md", "utf8");
 
+  assert.doesNotMatch(readme, /\| \[Codex CLI\]\([^)]+\) \| Yes \|/);
+  assert.match(readme, /\| \[Codex CLI\]\([^)]+\) \| Codex backend \|/);
+  assert.match(readme, /For the default Codex backend, log in once:/);
+  assert.match(readme, /\[v0\.4\.0 release notes and smoke checklist\]\(docs\/release-v0\.4\.0\.md\)/);
+  assert.doesNotMatch(readme, /Operator launches Codex in the current vault/);
+  assert.match(readme, /Operator launches the selected backend in the current vault/);
+  assert.doesNotMatch(readme, /manifest\.json\s+main\.js\s+styles\.css/);
+  assert.doesNotMatch(manual, /manifest\.json\s+main\.js\s+styles\.css/);
+  assert.doesNotMatch(manual, /Operator launches Codex with `workspace-write` permissions/);
+  assert.match(manual, /Operator launches the selected backend with vault-scoped write permissions/);
+  assert.match(releaseNotes, /Download `operator-control-0\.4\.0\.zip`/);
+  assert.match(releaseNotes, /Clean-vault smoke checklist/);
+  assert.match(releaseNotes, /Start my day unlocks with the selected backend/);
   assert.doesNotMatch(readme, /boundary cascade/i);
   assert.doesNotMatch(readme, /minute-aligned local clock context/i);
   assert.doesNotMatch(readme, /weekly shortcuts expose/i);

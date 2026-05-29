@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Obsidian Operator — an AI-native personal operating system for Obsidian, with a core daily concierge and optional intelligence/content modules",
-    "version": "2.0.12"
+    "version": "2.0.13"
   },
   "plugins": [
     {
       "name": "obsidian-operator",
       "source": "./plugins/obsidian-operator/",
       "description": "All 20 Operator skills (19 production + 1 cross-platform reference) — daily concierge, weekly planning, strategic reviews, meetings, projects, deep research, and optional intelligence/content modules. Supports Claude Code and Codex CLI.",
-      "version": "2.0.12"
+      "version": "2.0.13"
     }
   ]
 }

@@ -14,7 +14,7 @@ Operator has three interaction layers:
 - **Agent workflows** for reasoning-heavy work: daily briefings, weekly reviews, project sync, meeting synthesis, content drafting, and deep research.
 - **CLI power path** for open-ended work: Codex CLI and Claude Code remain available for multi-turn conversations, ad hoc prompts, and raw slash commands.
 
-For a compact end-user guide, see [Operator Home Manual](docs/operator-home-manual.md).
+For a compact end-user guide, see [Operator Home Manual](docs/operator-home-manual.md). For the current beta release gate, see the [v0.4.0 release notes and smoke checklist](docs/release-v0.4.0.md).
 
 ## Start with the Obsidian UI
 
@@ -22,15 +22,15 @@ Use this path if you want the product experience: one-click vault initialization
 
 ### 1. Install prerequisites
 
-| Requirement | Required | Notes |
-|-------------|----------|-------|
-| [Obsidian](https://obsidian.md) | Yes | Desktop app required for Operator Home |
-| [Codex CLI](https://developers.openai.com/codex/cli) | Yes | Default backend for one-click runs |
-| Claude Code | Optional | Detected if `claude` is available on PATH |
+| Requirement | Required for | Notes |
+|-------------|--------------|-------|
+| [Obsidian](https://obsidian.md) | Everyone | Desktop app required for Operator Home |
+| [Codex CLI](https://developers.openai.com/codex/cli) | Codex backend | Default backend for one-click runs |
+| Claude Code | Claude backend | Switch backend in Operator settings |
 | Gmail connector or MCP | Optional | Adds email context to `/daily-init` |
 | Gemini API key + ffmpeg | Optional | Enables `/meeting` auto-transcription |
 
-Log in to Codex once:
+For the default Codex backend, log in once:
 
 ```bash
 codex login
@@ -42,14 +42,11 @@ For normal users, install the Obsidian UI from the release zip:
 
 1. Download the versioned `operator-control-<version>.zip` from the [latest release](https://github.com/herschel0130/obsidian-operator-product/releases/latest). The unversioned `operator-control.zip` asset is kept for compatibility.
 2. Unzip it. You should get an `operator-control/` folder.
-3. Move that folder into your vault:
+3. Move that whole folder into `<your vault>/.obsidian/plugins/`.
 
 ```text
 <your vault>/.obsidian/plugins/
   operator-control/
-    manifest.json
-    main.js
-    styles.css
 ```
 
 4. Open Obsidian, enable **Community plugins**, then enable **Operator**.
@@ -99,7 +96,7 @@ The dashboard will show:
 3. In **Active projects**, click **New** and create a native Markdown project note.
 4. Enter your available hours, optionally add one manual item per line, and click **Start my day**. Review the Preview, then run it.
 
-The first background run asks for authorization. Operator launches Codex in the current vault with `workspace-write` permissions, never with full-disk or dangerous sandbox bypass settings by default. Fixed structural tasks such as vault initialization, quick capture, and new project scaffolding run through the Obsidian API; reasoning-heavy work such as daily briefings, project sync, meeting synthesis, content drafting, and deep research still runs through editable agent previews.
+The first background run asks for authorization. Operator launches the selected backend in the current vault with vault-scoped write permissions, never with full-disk or dangerous sandbox bypass settings by default. Fixed structural tasks such as vault initialization, quick capture, and new project scaffolding run through the Obsidian API; reasoning-heavy work such as daily briefings, project sync, meeting synthesis, content drafting, and deep research still runs through editable agent previews.
 
 ## Power User CLI Path
 

@@ -263,7 +263,7 @@ Rules:
 
 ## Post-Briefing
 
-After the briefing is written, open the daily note in Obsidian: `obsidian open path="<daily-note-path>"` (using the path resolved from `obsidian daily:path`).
+After the briefing is written, open the computed daily note path in Obsidian: `obsidian open path="<daily-note-path>"`. If the CLI open command fails, silently use the file tool fallback.
 
 ## Optional Modules
 

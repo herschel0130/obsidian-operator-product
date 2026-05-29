@@ -27,7 +27,7 @@ Implementation status after the current cleanup pass:
 - `daily-init` and its hook keep weekly/monthly/quarterly concierge checks, while GitHub/arXiv/AI weekly/content modules are explicit opt-in.
 - Setup health optional integrations now use neutral optional visual state instead of missing/warning styling.
 - Shipped skill/hook wording no longer includes internal regression anecdotes or hard-edged maintainer-only phrasing.
-- Release packaging keeps `operator-control.zip` and also creates a versioned zip asset.
+- Release packaging keeps `operator-control.zip`, creates a versioned zip asset, and now has a v0.4.0 release note plus clean-vault smoke checklist.
 
 The next development goal should focus on clean-vault smoke testing and release polish rather than repeating the Phase 0/optional-module cleanup.
 
@@ -587,14 +587,14 @@ Acceptance criteria:
 
 Goal: make install feel normal for non-developers.
 
-Status: partially implemented. Packaging now creates a versioned zip alongside the compatibility zip; release notes and distribution strategy remain future work.
+Status: implemented for v0.4 readiness. Packaging now creates a versioned zip alongside the compatibility zip, and `docs/release-v0.4.0.md` captures the three-step user install path plus the clean-vault smoke checklist. Longer-term community/beta distribution remains future work.
 
 Tasks:
 
 1. Version release zip names.
-2. Add a short install page or release note template.
+2. Add a short install page or release note template. Completed in `docs/release-v0.4.0.md`.
 3. Keep developer install docs separate.
-4. Add manual smoke checklist for clean vault install.
+4. Add manual smoke checklist for clean vault install. Completed in `docs/release-v0.4.0.md`.
 5. Consider future community/beta plugin distribution once the product surface stabilizes.
 
 Acceptance criteria:
